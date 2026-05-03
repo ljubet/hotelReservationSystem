@@ -1,0 +1,39 @@
+{
+  "createHotel": {
+    "name": "Riverside Hotel",
+    "description": "Modern hotel near the river.",
+    "address": "123 River Road",
+    "city": "Springfield",
+    "country": "USA",
+    "phone": "+1-555-0100",
+    "email": "info@riverside.example",
+    "starRating": 4
+  },
+  "createRoomType": {
+    "name": "Standard",
+    "description": "Standard room with queen bed",
+    "maxGuests": 2,
+    "basePricePerNight": 129.00
+  },
+  "createRoom": {
+    "roomNumber": "101",
+    "floor": 1,
+    "status": "AVAILABLE",
+    "hotelId": 1,
+    "roomTypeId": 1
+  },
+  "createGuest": {
+    "firstName": "Jamie",
+    "lastName": "Lee",
+    "email": "jamie.lee@example.com",
+    "phone": "+1-555-0199"
+  },
+  "createReservation": {
+    "guestId": 1,
+    "roomId": 1,
+    "checkInDate": "2026-06-10",
+    "checkOutDate": "2026-06-12",
+    "numberOfGuests": 2
+  }
+}
+
