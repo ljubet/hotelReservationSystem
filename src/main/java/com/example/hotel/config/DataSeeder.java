@@ -1,12 +1,17 @@
 package com.example.hotel.config;
 
+import com.example.hotel.entity.Conversation;
+import com.example.hotel.entity.ConversationCategory;
+import com.example.hotel.entity.ConversationMessage;
 import com.example.hotel.entity.Guest;
 import com.example.hotel.entity.Hotel;
+import com.example.hotel.entity.MessageRole;
 import com.example.hotel.entity.Reservation;
 import com.example.hotel.entity.ReservationStatus;
 import com.example.hotel.entity.Room;
 import com.example.hotel.entity.RoomStatus;
 import com.example.hotel.entity.RoomType;
+import com.example.hotel.repository.ConversationRepository;
 import com.example.hotel.repository.GuestRepository;
 import com.example.hotel.repository.HotelRepository;
 import com.example.hotel.repository.ReservationRepository;
@@ -42,17 +47,20 @@ public class DataSeeder implements CommandLineRunner {
     private final RoomRepository roomRepository;
     private final GuestRepository guestRepository;
     private final ReservationRepository reservationRepository;
+    private final ConversationRepository conversationRepository;
 
     public DataSeeder(HotelRepository hotelRepository,
                       RoomTypeRepository roomTypeRepository,
                       RoomRepository roomRepository,
                       GuestRepository guestRepository,
-                      ReservationRepository reservationRepository) {
+                      ReservationRepository reservationRepository,
+                      ConversationRepository conversationRepository) {
         this.hotelRepository = hotelRepository;
         this.roomTypeRepository = roomTypeRepository;
         this.roomRepository = roomRepository;
         this.guestRepository = guestRepository;
         this.reservationRepository = reservationRepository;
+        this.conversationRepository = conversationRepository;
     }
 
     @Override
@@ -62,6 +70,7 @@ public class DataSeeder implements CommandLineRunner {
         Faker faker = new Faker(new Locale("en"), new Random(42));
         List<RoomType> roomTypes = seedRoomTypes(faker);
         List<Hotel> hotels = seedHotels(faker);
+        seedConversations(hotels);
         List<Room> rooms = seedRooms(faker, hotels, roomTypes);
         List<Guest> guests = seedGuests(faker);
         seedReservations(faker, rooms, guests);
@@ -69,10 +78,84 @@ public class DataSeeder implements CommandLineRunner {
 
     private void resetData() {
         reservationRepository.deleteAll();
+        conversationRepository.deleteAll();
         roomRepository.deleteAll();
         guestRepository.deleteAll();
         roomTypeRepository.deleteAll();
         hotelRepository.deleteAll();
+    }
+
+    private void seedConversations(List<Hotel> hotels) {
+        List<ConversationSeed> seeds = List.of(
+                new ConversationSeed("Parking question", ConversationCategory.PARKING,
+                        "Guest asks about parking",
+                        "Do you have parking?",
+                        "Yes, we offer free parking for all hotel guests."),
+                new ConversationSeed("Breakfast included", ConversationCategory.BREAKFAST,
+                        "Guest asks about breakfast",
+                        "Is breakfast included?",
+                        "Breakfast is included with most rates and served daily."),
+                new ConversationSeed("Check-in time", ConversationCategory.CHECK_IN,
+                        "Guest asks about check-in",
+                        "What time is check-in?",
+                        "Check-in starts at 3 PM, and early check-in is subject to availability."),
+                new ConversationSeed("Check-out time", ConversationCategory.CHECK_OUT,
+                        "Guest asks about check-out",
+                        "What time is check-out?",
+                        "Check-out is at 11 AM, and late check-out may be available upon request."),
+                new ConversationSeed("Double room booking", ConversationCategory.RESERVATION,
+                        "Guest wants a double room",
+                        "Can I book a double room for two nights?",
+                        "Yes, we have double rooms available. Please share your dates."),
+                new ConversationSeed("Cancellation policy", ConversationCategory.CANCELLATION,
+                        "Guest asks about cancellation",
+                        "What is your cancellation policy?",
+                        "Cancellations are free up to 24 hours before arrival for flexible rates."),
+                new ConversationSeed("Room cleaning complaint", ConversationCategory.COMPLAINT,
+                        "Guest reports a complaint",
+                        "My room was not cleaned today.",
+                        "I'm sorry about that. We will have housekeeping assist immediately."),
+                new ConversationSeed("Payment methods", ConversationCategory.PAYMENT,
+                        "Guest asks about payment",
+                        "What payment methods do you accept?",
+                        "We accept major credit cards and contactless payments at the front desk.")
+        );
+
+        for (int i = 0; i < seeds.size(); i++) {
+            ConversationSeed seed = seeds.get(i);
+            Hotel hotel = hotels.isEmpty() ? null : hotels.get(i % hotels.size());
+            Conversation conversation = new Conversation();
+            conversation.setTitle(seed.title());
+            conversation.setCategory(seed.category());
+            conversation.setLanguage("English");
+            conversation.setDescription(seed.description());
+            conversation.setHotel(hotel);
+
+            List<ConversationMessage> messages = new ArrayList<>();
+            messages.add(buildMessage(conversation, MessageRole.SYSTEM, 1,
+                    "You are a helpful hotel assistant."));
+            messages.add(buildMessage(conversation, MessageRole.USER, 2, seed.userMessage()));
+            messages.add(buildMessage(conversation, MessageRole.ASSISTANT, 3, seed.assistantMessage()));
+            conversation.setMessages(messages);
+
+            conversationRepository.save(conversation);
+        }
+    }
+
+    private ConversationMessage buildMessage(Conversation conversation, MessageRole role, int orderNumber, String content) {
+        ConversationMessage message = new ConversationMessage();
+        message.setConversation(conversation);
+        message.setRole(role);
+        message.setOrderNumber(orderNumber);
+        message.setContent(content);
+        return message;
+    }
+
+    private record ConversationSeed(String title,
+                                    ConversationCategory category,
+                                    String description,
+                                    String userMessage,
+                                    String assistantMessage) {
     }
 
     private List<RoomType> seedRoomTypes(Faker faker) {

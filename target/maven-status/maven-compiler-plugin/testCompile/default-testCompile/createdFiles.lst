@@ -1,2 +1,3 @@
 com\example\hotel\HotelManagementApplicationTests.class
+com\example\hotel\ConversationServiceIntegrationTest.class
 com\example\hotel\ReservationServiceIntegrationTest.class

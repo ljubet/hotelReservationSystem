@@ -33,3 +33,44 @@ See `samples/sample-requests.json` for example payloads.
   `PUT /api/reservations/{id}/confirm`, `PUT /api/reservations/{id}/cancel`
 - Availability: `GET /api/reservations/availability?hotelId=&checkInDate=&checkOutDate=&guests=`
 
+## Hotel Conversation Builder for LLM Fine-Tuning
+This module lets hotel staff build structured guest-assistant conversations that can be exported
+as JSON for later training or evaluation. It does not fine-tune a model or call real AI services.
+
+### Conversation endpoints
+- Conversations: `GET/POST /api/conversations`, `GET/PUT/DELETE /api/conversations/{id}`
+- Messages: `POST /api/conversations/{id}/messages`, `PUT/DELETE /api/conversations/{conversationId}/messages/{messageId}`
+- Exports: `GET /api/conversations/{id}/export`, `GET /api/conversations/export`
+- Filters: `GET /api/conversations/category/{category}`, `GET /api/conversations/hotel/{hotelId}`,
+  `GET /api/conversations/language/{language}`
+- Generator: `POST /api/conversations/generate/{count}`
+- Chat simulation: `POST /api/chat/simulate`
+
+### Sample JSON payloads
+Create conversation:
+```json
+{
+  "title": "Parking question",
+  "category": "PARKING",
+  "language": "English",
+  "description": "Guest asks about hotel parking",
+  "hotelId": 1
+}
+```
+
+Add message:
+```json
+{
+  "role": "USER",
+  "content": "Do you have parking?",
+  "orderNumber": 2
+}
+```
+
+Chat simulation:
+```json
+{
+  "message": "Do you have breakfast?"
+}
+```
+
