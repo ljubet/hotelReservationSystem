@@ -2,11 +2,17 @@ package com.example.hotel.controller.admin;
 
 import com.example.hotel.entity.Reservation;
 import com.example.hotel.entity.ReservationStatus;
+import com.example.hotel.form.AdminReservationForm;
 import com.example.hotel.repository.ReservationRepository;
+import com.example.hotel.repository.RoomRepository;
+import com.example.hotel.service.ReservationService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,9 +25,20 @@ import java.util.List;
 public class AdminReservationController {
 
     private final ReservationRepository reservationRepository;
+    private final RoomRepository roomRepository;
+    private final ReservationService reservationService;
 
-    public AdminReservationController(ReservationRepository reservationRepository) {
+    public AdminReservationController(ReservationRepository reservationRepository,
+                                      RoomRepository roomRepository,
+                                      ReservationService reservationService) {
         this.reservationRepository = reservationRepository;
+        this.roomRepository = roomRepository;
+        this.reservationService = reservationService;
+    }
+
+    @ModelAttribute("statuses")
+    ReservationStatus[] statuses() {
+        return ReservationStatus.values();
     }
 
     @GetMapping("/admin/reservations")
@@ -30,7 +47,6 @@ public class AdminReservationController {
                                @RequestParam(required = false) LocalDate to,
                                Model model) {
         model.addAttribute("reservations", filter(status, from, to));
-        model.addAttribute("statuses", ReservationStatus.values());
         model.addAttribute("selectedStatus", status);
         model.addAttribute("from", from);
         model.addAttribute("to", to);
@@ -42,6 +58,41 @@ public class AdminReservationController {
         model.addAttribute("reservation", reservationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Reservation not found")));
         return "admin/reservations/detail";
+    }
+
+    @GetMapping("/admin/reservations/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
+        model.addAttribute("reservationForm", reservationService.toAdminReservationForm(reservation));
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("rooms", roomRepository.findAll());
+        return "admin/reservations/form";
+    }
+
+    @PostMapping("/admin/reservations/{id}/edit")
+    public String update(@PathVariable Long id,
+                         @Valid @ModelAttribute("reservationForm") AdminReservationForm reservationForm,
+                         BindingResult bindingResult,
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("reservation", reservation);
+            model.addAttribute("rooms", roomRepository.findAll());
+            return "admin/reservations/form";
+        }
+        try {
+            reservationService.updateAdminReservation(id, reservationForm);
+            redirectAttributes.addFlashAttribute("success", "Reservation updated.");
+            return "redirect:/admin/reservations/" + id;
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("reservation", ex.getMessage());
+            model.addAttribute("reservation", reservation);
+            model.addAttribute("rooms", roomRepository.findAll());
+            return "admin/reservations/form";
+        }
     }
 
     @PostMapping("/admin/reservations/{id}/confirm")

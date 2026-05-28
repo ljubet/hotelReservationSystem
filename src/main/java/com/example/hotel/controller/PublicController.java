@@ -91,6 +91,8 @@ public class PublicController {
         }
         model.addAttribute("reservationForm", form);
         model.addAttribute("room", room);
+        model.addAttribute("pageTitle", "Reservation Request");
+        model.addAttribute("submitLabel", "Submit Reservation");
         return "reservations/form";
     }
 

@@ -24,8 +24,6 @@ import java.util.Map;
 @RequestMapping("/chat")
 public class ChatController {
 
-    private static final String FALLBACK = "Thanks for your question! Our team will reply shortly.";
-
     private final ChatMessageRepository chatMessageRepository;
     private final ChatbotService chatbotService;
 
@@ -36,27 +34,33 @@ public class ChatController {
 
     @PostMapping("/send")
     public ResponseEntity<Map<String, Object>> send(@Valid @RequestBody ChatSendRequest request) {
-        String reply = chatbotService.getReply(request.getQuestion());
+        String reply = normalizeReply(chatbotService.getReply(request.getQuestion(), request.getSenderEmail()));
         ChatMessage message = new ChatMessage();
         message.setSenderName(request.getSenderName());
         message.setSenderEmail(request.getSenderEmail());
         message.setQuestion(request.getQuestion());
-        if (reply != null) {
-            message.setAnswer(reply);
-            message.setAnswered(true);
-            message.setAnsweredAt(LocalDateTime.now());
-        }
+        message.setAnswer(reply);
+        message.setAnswered(true);
+        message.setAiAnswered(true);
+        message.setAnsweredAt(LocalDateTime.now());
         ChatMessage saved = chatMessageRepository.save(message);
         return ResponseEntity.ok(Map.of(
                 "id", saved.getId(),
                 "question", saved.getQuestion(),
-                "answer", reply == null ? FALLBACK : reply,
-                "answered", reply != null));
+                "answer", reply,
+                "answered", true));
     }
 
     @GetMapping("/messages")
     public List<ChatMessage> messages(@RequestParam String email) {
         return chatMessageRepository.findBySenderEmailOrderByCreatedAtAsc(email);
+    }
+
+    private String normalizeReply(String reply) {
+        if (reply == null || reply.isBlank()) {
+            return ChatbotService.UNAVAILABLE_REPLY;
+        }
+        return reply.trim();
     }
 
     @Getter

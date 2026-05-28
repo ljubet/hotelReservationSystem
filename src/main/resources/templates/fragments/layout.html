@@ -12,7 +12,15 @@
             --hotel-ink: #22201c;
             --hotel-cream: #f8f4ec;
         }
-        body { background: #fffdf9; color: var(--hotel-ink); }
+        html { min-height: 100%; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #fffdf9;
+            color: var(--hotel-ink);
+        }
+        body > main { flex: 1 0 auto; }
         .skip-link {
             position: absolute; left: 1rem; top: -4rem; z-index: 2000;
             background: #fff; color: #111; padding: .6rem 1rem; border-radius: 8px;
@@ -122,7 +130,8 @@
         }
         .room-rating { color: #9f742b; font-weight: 700; white-space: nowrap; }
         .auth-page {
-            min-height: calc(100vh - 74px);
+            min-height: 0;
+            flex: 1 0 auto;
             position: relative;
             background: linear-gradient(rgba(34, 32, 28, .48), rgba(34, 32, 28, .36)),
             url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=80') center/cover;
@@ -177,15 +186,15 @@
         .reveal-on-scroll.is-visible {
             opacity: 1; transform: translateY(0);
         }
-        .admin-shell { min-height: 100vh; background: #f4f6f8; }
-        .admin-sidebar { width: 260px; background: #161a23; color: #fff; }
+        .admin-shell { min-height: 100vh; flex: 1 0 auto; background: #f4f6f8; }
+        .admin-sidebar { width: 260px; min-width: 260px; flex: 0 0 260px; background: #161a23; color: #fff; }
         .admin-sidebar a { color: #ced4da; text-decoration: none; display: block; padding: .7rem 1rem; border-radius: .4rem; }
         .admin-sidebar a:hover { background: #2a3040; color: #fff; }
         @media (max-width: 767.98px) {
             .hero { min-height: 56vh; }
             .landing-section { padding-top: 3.5rem; padding-bottom: 3.5rem; }
-            .auth-page { min-height: auto; padding-top: 3rem; padding-bottom: 3rem; }
-            .admin-sidebar { width: 100%; }
+            .auth-page { min-height: 0; padding-top: 3rem; padding-bottom: 3rem; }
+            .admin-sidebar { width: 100%; min-width: 100%; flex-basis: auto; }
             .admin-shell { display: block !important; }
             .carousel-edge-control { position: static; margin-bottom: 1rem; }
             .carousel-mobile-controls { display: flex !important; }
@@ -313,7 +322,8 @@
         function bubble(text, own) {
             const node = document.createElement('div');
             node.className = 'bubble ' + (own ? 'bubble-user' : 'bubble-bot');
-            node.textContent = text;
+            const fallback = 'Our virtual assistant is currently unavailable. Your message has been saved and our team will reply shortly.';
+            node.textContent = text && String(text).trim() ? String(text).trim() : fallback;
             thread.appendChild(node);
             thread.scrollTop = thread.scrollHeight;
         }
@@ -323,13 +333,17 @@
             if (!question || !email) return;
             bubble(question, true);
             document.getElementById('chatQuestion').value = '';
-            const response = await fetch('/chat/send', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({senderName: name, senderEmail: email, question})
-            });
-            const payload = await response.json();
-            bubble(payload.answer, false);
+            try {
+                const response = await fetch('/chat/send', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({senderName: name, senderEmail: email, question})
+                });
+                const payload = response.ok ? await response.json() : {};
+                bubble(payload.answer, false);
+            } catch (error) {
+                bubble('', false);
+            }
         }
         async function loadMessages() {
             if (!emailInput || !emailInput.value) return;

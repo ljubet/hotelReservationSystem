@@ -24,6 +24,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     List<Reservation> findAllByOrderByCreatedAtDesc();
 
+    List<Reservation> findByGuestEmailOrderByCreatedAtDesc(String guestEmail);
+
     @Query("""
             select distinct r from Reservation r
             where r.guestEmail = :email
@@ -42,4 +44,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsActiveOverlap(@Param("roomId") Long roomId,
                                 @Param("checkIn") LocalDate checkIn,
                                 @Param("checkOut") LocalDate checkOut);
+
+    @Query("""
+            select count(r) > 0 from Reservation r
+            where r.room.id = :roomId
+              and r.id <> :reservationId
+              and r.status in (com.example.hotel.entity.ReservationStatus.PENDING, com.example.hotel.entity.ReservationStatus.CONFIRMED)
+              and r.checkIn < :checkOut
+              and r.checkOut > :checkIn
+            """)
+    boolean existsActiveOverlapExcludingReservation(@Param("roomId") Long roomId,
+                                                   @Param("reservationId") Long reservationId,
+                                                   @Param("checkIn") LocalDate checkIn,
+                                                   @Param("checkOut") LocalDate checkOut);
 }

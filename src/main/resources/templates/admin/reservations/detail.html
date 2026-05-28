@@ -18,7 +18,8 @@
                         <dt class="col-sm-4">Total</dt><dd class="col-sm-8" th:text="${'$' + reservation.totalPrice}">$338</dd>
                         <dt class="col-sm-4">Status</dt><dd class="col-sm-8"><span class="badge text-bg-secondary" th:text="${reservation.status}">PENDING</span></dd>
                     </dl>
-                    <div class="d-flex gap-2 mt-4">
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <a class="btn btn-primary" th:href="@{/admin/reservations/{id}/edit(id=${reservation.id})}">Edit Reservation</a>
                         <form th:action="@{/admin/reservations/{id}/confirm(id=${reservation.id})}" method="post">
                             <button class="btn btn-success" type="submit">Confirm</button>
                         </form>

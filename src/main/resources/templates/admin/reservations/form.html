@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Edit Reservation')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Edit Reservation</h1>
+                <p class="text-muted mb-0" th:text="${'Reservation #' + reservation.id}">Reservation</p>
+            </div>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/{id}(id=${reservation.id})}">Back To Detail</a>
+        </div>
+
+        <form class="card p-4" th:action="@{/admin/reservations/{id}/edit(id=${reservation.id})}" th:object="${reservationForm}" method="post">
+            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label" for="roomId">Room</label>
+                    <select id="roomId" th:field="*{roomId}" class="form-select">
+                        <option th:each="room : ${rooms}" th:value="${room.id}" th:text="${room.name + ' - ' + room.roomType + ' ($' + room.pricePerNight + ')'}"></option>
+                    </select>
+                    <div class="text-danger small" th:errors="*{roomId}"></div>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label" for="status">Status</label>
+                    <select id="status" th:field="*{status}" class="form-select">
+                        <option th:each="status : ${statuses}" th:value="${status}" th:text="${status}"></option>
+                    </select>
+                    <div class="text-danger small" th:errors="*{status}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="checkIn">Check-in</label>
+                    <input id="checkIn" type="date" th:field="*{checkIn}" class="form-control">
+                    <div class="text-danger small" th:errors="*{checkIn}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="checkOut">Check-out</label>
+                    <input id="checkOut" type="date" th:field="*{checkOut}" class="form-control">
+                    <div class="text-danger small" th:errors="*{checkOut}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="guestName">Guest name</label>
+                    <input id="guestName" th:field="*{guestName}" class="form-control">
+                    <div class="text-danger small" th:errors="*{guestName}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="guestEmail">Guest email</label>
+                    <input id="guestEmail" th:field="*{guestEmail}" class="form-control">
+                    <div class="text-danger small" th:errors="*{guestEmail}"></div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="staffNote">Staff note</label>
+                    <textarea id="staffNote" th:field="*{staffNote}" rows="5" class="form-control"></textarea>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button class="btn btn-primary" type="submit">Save Changes</button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/{id}(id=${reservation.id})}">Cancel</a>
+            </div>
+        </form>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

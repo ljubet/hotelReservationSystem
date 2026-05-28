@@ -17,6 +17,27 @@
         </div>
     </section>
 
+    <section class="row g-3 mb-4" aria-label="Reservation status guide">
+        <div class="col-md-4">
+            <div class="reservation-card p-3 h-100">
+                <span class="badge text-bg-warning mb-2">PENDING</span>
+                <p class="small text-muted mb-0">Your request was sent to the hotel and can still be edited before approval.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="reservation-card p-3 h-100">
+                <span class="badge text-bg-success mb-2">CONFIRMED</span>
+                <p class="small text-muted mb-0">An admin approved the booking. Guests cannot edit it after confirmation.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="reservation-card p-3 h-100">
+                <span class="badge text-bg-danger mb-2">CANCELLED</span>
+                <p class="small text-muted mb-0">The reservation is no longer active and cannot be changed.</p>
+            </div>
+        </div>
+    </section>
+
     <div class="d-grid gap-4">
         <article class="reservation-card" th:each="reservation : ${reservations}">
             <div class="row g-0">
@@ -54,7 +75,12 @@
 
                         <div class="mt-auto d-flex flex-column flex-md-row justify-content-between gap-2 align-items-md-center border-top pt-3">
                             <span class="small text-muted" th:text="${'Requested ' + #temporals.format(reservation.createdAt, 'MMM d, yyyy HH:mm')}">Requested date</span>
-                            <a class="btn btn-outline-dark btn-sm" th:href="@{/rooms/{id}(id=${reservation.room.id})}">View Room</a>
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-outline-dark btn-sm" th:href="@{/rooms/{id}(id=${reservation.room.id})}">View Room</a>
+                                <a class="btn btn-gold btn-sm"
+                                   th:if="${reservation.status.name() == 'PENDING'}"
+                                   th:href="@{/reservations/{id}/edit(id=${reservation.id})}">Edit Reservation</a>
+                            </div>
                         </div>
                     </div>
                 </div>

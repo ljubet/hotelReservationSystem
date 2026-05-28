@@ -28,7 +28,7 @@ public class AdminChatController {
 
     @GetMapping("/admin/chat")
     public String inbox(Model model) {
-        model.addAttribute("messages", chatMessageRepository.findByAnsweredFalseOrderByCreatedAtDesc());
+        model.addAttribute("messages", chatMessageRepository.findAllByOrderByCreatedAtDesc());
         return "admin/chat/list";
     }
 
@@ -48,6 +48,7 @@ public class AdminChatController {
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
         message.setAnswer(answer);
         message.setAnswered(true);
+        message.setAiAnswered(false);
         message.setAnsweredAt(LocalDateTime.now());
         if (saveConversation && !message.isSavedAsConversation()) {
             conversationService.createFromChat(message);

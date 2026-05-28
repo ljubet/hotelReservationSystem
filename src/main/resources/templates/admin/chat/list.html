@@ -6,17 +6,28 @@
     <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
     <main class="flex-grow-1 p-4">
         <div th:replace="~{fragments/layout :: alerts}"></div>
-        <h1 class="h3 mb-4">Chat Inbox</h1>
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-1">Chat Inbox</h1>
+                <p class="text-muted mb-0">Review guest questions, AI replies, and messages that still need staff attention.</p>
+            </div>
+        </div>
         <div class="card p-3">
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action" th:each="message : ${messages}" th:href="@{/admin/chat/{id}(id=${message.id})}">
                     <div class="d-flex justify-content-between gap-3">
-                        <strong th:text="${message.senderName}">Guest</strong>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <strong th:text="${message.senderName}">Guest</strong>
+                            <span th:if="${message.aiAnswered == true}" class="badge text-bg-info">AI</span>
+                            <span th:if="${!message.answered}" class="badge text-bg-warning">Needs Reply</span>
+                            <span th:if="${message.answered && message.aiAnswered != true}" class="badge text-bg-success">Staff Answered</span>
+                        </div>
                         <span class="small text-muted" th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
                     </div>
                     <div class="text-muted" th:text="${message.question}">Question</div>
+                    <div class="small mt-2" th:if="${message.answer != null}" th:text="${message.answer}">Answer</div>
                 </a>
-                <div th:if="${#lists.isEmpty(messages)}" class="text-muted p-3">No unanswered messages.</div>
+                <div th:if="${#lists.isEmpty(messages)}" class="text-muted p-3">No chat messages yet.</div>
             </div>
         </div>
     </main>

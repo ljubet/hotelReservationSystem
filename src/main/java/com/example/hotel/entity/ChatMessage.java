@@ -5,7 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -48,11 +50,26 @@ public class ChatMessage {
     @Column(nullable = false)
     private boolean savedAsConversation = false;
 
+    private Boolean aiAnswered = false;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     void onCreate() {
         this.createdAt = LocalDateTime.now();
+        normalizeFlags();
+    }
+
+    @PostLoad
+    @PreUpdate
+    void normalizeFlags() {
+        if (this.aiAnswered == null) {
+            this.aiAnswered = false;
+        }
+    }
+
+    public boolean isAiAnswered() {
+        return Boolean.TRUE.equals(aiAnswered);
     }
 }

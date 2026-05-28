@@ -9,7 +9,11 @@
         <div class="row g-4">
             <div class="col-lg-5">
                 <div class="card p-4">
-                    <h2 class="h5" th:text="${message.senderName}">Guest</h2>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h2 class="h5 mb-0" th:text="${message.senderName}">Guest</h2>
+                        <span th:if="${message.aiAnswered == true}" class="badge text-bg-info">AI Answer</span>
+                        <span th:if="${!message.answered}" class="badge text-bg-warning">Needs Reply</span>
+                    </div>
                     <p class="text-muted" th:text="${message.senderEmail}">email</p>
                     <p th:text="${message.question}">Question</p>
                 </div>

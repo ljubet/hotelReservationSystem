@@ -13,5 +13,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     List<ChatMessage> findByAnsweredFalseOrderByCreatedAtDesc();
 
+    List<ChatMessage> findAllByOrderByCreatedAtDesc();
+
     List<ChatMessage> findBySenderEmailOrderByCreatedAtAsc(String senderEmail);
 }

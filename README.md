@@ -10,6 +10,7 @@ Aurora Hotel is a Spring Boot web application for hotel guests and hotel adminis
 - Spring Security
 - Spring Data JPA
 - PostgreSQL
+- Spring AI with Ollama
 - Bootstrap 5
 - Lombok
 - Maven
@@ -40,6 +41,23 @@ Open:
 http://localhost:8080
 ```
 
+## Local AI Chatbot
+
+The guest chat uses Spring AI with a local Ollama model. Install Ollama, then pull and run the configured model:
+
+```powershell
+ollama pull llama3.1
+ollama serve
+```
+
+The application connects to:
+
+```text
+http://localhost:11434
+```
+
+If Ollama is not running, the chat still saves the guest message and returns a polite fallback so the team can follow up.
+
 ## Database Configuration
 
 The local PostgreSQL configuration is stored in:
@@ -68,7 +86,7 @@ Admin accounts:
 
 Guest account:
 
-- `guest1` / `guest123`
+- `guest1` / `guest1`
 
 ## Main Pages
 
@@ -95,7 +113,7 @@ Admin pages:
 - Room browsing with filters, ratings, availability, and pagination
 - Reservation creation with date validation and overlap prevention
 - Admin reservation approval, cancellation, and staff notes
-- Rule-based guest chat with admin fallback inbox
+- Ollama-powered guest chat with hotel data tools and admin review
 - Conversation builder with alternating user/assistant turns
 - JSONL export for approved conversations
 - Shared responsive Bootstrap layout
