@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin Rooms')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Rooms</h1>
+            <a class="btn btn-primary" th:href="@{/admin/rooms/new}">Add Room</a>
+        </div>
+        <div class="card p-3">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Name</th><th>Type</th><th>Rating</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <tr th:each="room : ${rooms}">
+                        <td th:text="${room.name}">Room</td>
+                        <td th:text="${room.roomType}">Type</td>
+                        <td th:text="${room.rating + '/5'}">4.8/5</td>
+                        <td th:text="${'$' + room.pricePerNight}">$169</td>
+                        <td>
+                            <span class="badge" th:classappend="${room.bookable} ? ' text-bg-success' : ' text-bg-warning'" th:text="${room.bookable ? 'Available' : 'Unavailable'}">Status</span>
+                        </td>
+                        <td class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/rooms/{id}/edit(id=${room.id})}">Edit</a>
+                            <form th:action="@{/admin/rooms/{id}/toggle-renovation(id=${room.id})}" method="post">
+                                <button class="btn btn-sm btn-outline-secondary" type="submit">Toggle Renovation</button>
+                            </form>
+                            <form th:action="@{/admin/rooms/{id}/delete(id=${room.id})}" method="post">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

@@ -1,76 +1,109 @@
-# Hotel Management Backend
+# Aurora Hotel Reservation System
 
-Spring Boot 3 backend for hotel management, rooms, guests, and reservations.
+Aurora Hotel is a Spring Boot web application for hotel guests and hotel administrators. Guests can browse rooms, create reservation requests, view their reservations, and ask questions through a chat widget. Administrators can manage rooms, reservations, chat replies, reusable conversation examples, and JSONL exports.
 
-## Requirements
-- Java 17+
-- Maven 3.9+
+## Tech Stack
 
-## Run
+- Java 17
+- Spring Boot 3
+- Spring MVC and Thymeleaf
+- Spring Security
+- Spring Data JPA
+- PostgreSQL
+- Bootstrap 5
+- Lombok
+- Maven
+
+## Local Setup
+
+Start PostgreSQL with Docker:
+
 ```powershell
-mvn spring-boot:run
+docker start hotel-postgres
 ```
 
-## Test
+If the container does not exist yet:
+
 ```powershell
-mvn test
+docker run --name hotel-postgres -e POSTGRES_DB=hotel_db -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=admin -p 5432:5432 -d postgres:16
 ```
 
-## H2 Console
-- URL: http://localhost:8080/h2-console
-- JDBC URL: jdbc:h2:mem:hoteldb
-- User: sa (no password)
+Run the application:
 
-## Sample requests
-See `samples/sample-requests.json` for example payloads.
-
-## Endpoints
-- Hotels: `GET/POST /api/hotels`, `GET/PUT/DELETE /api/hotels/{id}`
-- Room types: `GET/POST /api/room-types`, `PUT/DELETE /api/room-types/{id}`
-- Rooms: `GET/POST /api/rooms`, `GET/PUT/DELETE /api/rooms/{id}`, `GET /api/hotels/{hotelId}/rooms`
-- Guests: `GET/POST /api/guests`, `GET/PUT/DELETE /api/guests/{id}`
-- Reservations: `GET/POST /api/reservations`, `GET /api/reservations/{id}`,
-  `PUT /api/reservations/{id}/confirm`, `PUT /api/reservations/{id}/cancel`
-- Availability: `GET /api/reservations/availability?hotelId=&checkInDate=&checkOutDate=&guests=`
-
-## Hotel Conversation Builder for LLM Fine-Tuning
-This module lets hotel staff build structured guest-assistant conversations that can be exported
-as JSON for later training or evaluation. It does not fine-tune a model or call real AI services.
-
-### Conversation endpoints
-- Conversations: `GET/POST /api/conversations`, `GET/PUT/DELETE /api/conversations/{id}`
-- Messages: `POST /api/conversations/{id}/messages`, `PUT/DELETE /api/conversations/{conversationId}/messages/{messageId}`
-- Exports: `GET /api/conversations/{id}/export`, `GET /api/conversations/export`
-- Filters: `GET /api/conversations/category/{category}`, `GET /api/conversations/hotel/{hotelId}`,
-  `GET /api/conversations/language/{language}`
-- Generator: `POST /api/conversations/generate/{count}`
-- Chat simulation: `POST /api/chat/simulate`
-
-### Sample JSON payloads
-Create conversation:
-```json
-{
-  "title": "Parking question",
-  "category": "PARKING",
-  "language": "English",
-  "description": "Guest asks about hotel parking",
-  "hotelId": 1
-}
+```powershell
+.\mvnw spring-boot:run
 ```
 
-Add message:
-```json
-{
-  "role": "USER",
-  "content": "Do you have parking?",
-  "orderNumber": 2
-}
+Open:
+
+```text
+http://localhost:8080
 ```
 
-Chat simulation:
-```json
-{
-  "message": "Do you have breakfast?"
-}
+## Database Configuration
+
+The local PostgreSQL configuration is stored in:
+
+```text
+src/main/resources/application.properties
 ```
 
+Default local values:
+
+- Database: `hotel_db`
+- Username: `admin`
+- Password: `admin`
+- Port: `5432`
+
+Hibernate is configured with `spring.jpa.hibernate.ddl-auto=update`, so tables are created or updated from the JPA entities when the app starts.
+
+## Default Accounts
+
+The application creates starter accounts when the database is empty.
+
+Admin accounts:
+
+- `admin` / `admin123`
+- `manager` / `admin123`
+
+Guest account:
+
+- `guest1` / `guest123`
+
+## Main Pages
+
+Guest pages:
+
+- `/` - landing page
+- `/rooms` - room listing with filters and pagination
+- `/rooms/{id}` - room details
+- `/reservations/new?roomId={id}` - reservation form
+- `/reservations/my` - logged-in guest reservations
+
+Admin pages:
+
+- `/admin/dashboard`
+- `/admin/rooms`
+- `/admin/reservations`
+- `/admin/chat`
+- `/admin/conversations`
+- `/admin/export`
+
+## Features
+
+- Role-based login for guests and admins
+- Room browsing with filters, ratings, availability, and pagination
+- Reservation creation with date validation and overlap prevention
+- Admin reservation approval, cancellation, and staff notes
+- Rule-based guest chat with admin fallback inbox
+- Conversation builder with alternating user/assistant turns
+- JSONL export for approved conversations
+- Shared responsive Bootstrap layout
+
+## Tests
+
+Run:
+
+```powershell
+.\mvnw test
+```

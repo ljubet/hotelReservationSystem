@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Login')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<main id="main-content" class="auth-page">
+    <div class="container">
+    <div class="row justify-content-center justify-content-lg-start">
+        <div class="col-md-5">
+            <div class="text-white mb-4">
+                <h1 class="display-6 fw-bold">Welcome Back</h1>
+                <p class="mb-0">Sign in to manage bookings, guest messages, and hotel operations.</p>
+            </div>
+            <div th:if="${param.error}" class="alert alert-danger">Invalid username or password.</div>
+            <form th:action="@{/login}" method="post" class="card auth-panel p-4">
+                <div class="mb-3">
+                    <label class="form-label" for="username">Username</label>
+                    <input id="username" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="password">Password</label>
+                    <input id="password" name="password" type="password" class="form-control" required>
+                </div>
+                <button class="btn btn-gold" type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+    </div>
+</main>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

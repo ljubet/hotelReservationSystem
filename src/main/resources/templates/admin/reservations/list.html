@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Reservations')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <h1 class="h3 mb-4">Reservations</h1>
+        <form class="row g-2 align-items-end mb-3" method="get" th:action="@{/admin/reservations}">
+            <div class="col-md-3">
+                <label class="form-label" for="status">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">All</option>
+                    <option th:each="status : ${statuses}" th:value="${status}" th:text="${status}" th:selected="${status == selectedStatus}"></option>
+                </select>
+            </div>
+            <div class="col-md-3"><label class="form-label" for="from">From</label><input id="from" name="from" type="date" class="form-control" th:value="${from}"></div>
+            <div class="col-md-3"><label class="form-label" for="to">To</label><input id="to" name="to" type="date" class="form-control" th:value="${to}"></div>
+            <div class="col-md-3"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
+        </form>
+        <div class="card p-3">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Guest</th><th>Room</th><th>Dates</th><th>Total</th><th>Status</th></tr></thead>
+                    <tbody>
+                    <tr th:each="reservation : ${reservations}">
+                        <td><a th:href="@{/admin/reservations/{id}(id=${reservation.id})}" th:text="${reservation.guestName}">Guest</a></td>
+                        <td th:text="${reservation.room.name}">Room</td>
+                        <td th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</td>
+                        <td th:text="${'$' + reservation.totalPrice}">$338</td>
+                        <td><span class="badge text-bg-secondary" th:text="${reservation.status}">PENDING</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

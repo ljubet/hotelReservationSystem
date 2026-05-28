@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Export')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <h1 class="h3 mb-4">JSONL Export</h1>
+        <form class="row g-2 align-items-end mb-4" method="get" th:action="@{/admin/export}">
+            <div class="col-md-4">
+                <label class="form-label" for="category">Category</label>
+                <select id="category" name="category" class="form-select">
+                    <option value="">All</option>
+                    <option th:each="category : ${categories}" th:value="${category}" th:text="${category}" th:selected="${category == selectedCategory}"></option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="status">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option th:each="status : ${statuses}" th:value="${status}" th:text="${status}" th:selected="${status == selectedStatus}"></option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary flex-fill" type="submit">Preview</button>
+                <a class="btn btn-success flex-fill"
+                   th:href="@{/admin/export/download(category=${selectedCategory},status=${selectedStatus})}">Download JSONL</a>
+            </div>
+        </form>
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Preview</h2>
+                <span class="text-muted" th:text="${totalMatches + ' matches'}">0 matches</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>First User Turn</th></tr></thead>
+                    <tbody>
+                    <tr th:each="conversation : ${preview}">
+                        <td th:text="${conversation.title}">Title</td>
+                        <td th:text="${conversation.category}">Category</td>
+                        <td th:text="${conversation.status}">Status</td>
+                        <td th:text="${#lists.isEmpty(conversation.turns) ? '' : conversation.turns[0].content}">Turn</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

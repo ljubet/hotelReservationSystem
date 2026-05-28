@@ -1,72 +1,81 @@
 package com.example.hotel.controller;
 
-import com.example.hotel.dto.ReservationCreateRequest;
-import com.example.hotel.dto.ReservationResponse;
-import com.example.hotel.dto.RoomResponse;
+import com.example.hotel.entity.Reservation;
+import com.example.hotel.entity.Room;
+import com.example.hotel.form.ReservationForm;
+import com.example.hotel.repository.ReservationRepository;
+import com.example.hotel.repository.RoomRepository;
+import com.example.hotel.repository.UserRepository;
 import com.example.hotel.service.ReservationService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.LocalDate;
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/reservations")
-@Validated
+@Controller
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final ReservationRepository reservationRepository;
+    private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(ReservationService reservationService,
+                                 ReservationRepository reservationRepository,
+                                 RoomRepository roomRepository,
+                                 UserRepository userRepository) {
         this.reservationService = reservationService;
+        this.reservationRepository = reservationRepository;
+        this.roomRepository = roomRepository;
+        this.userRepository = userRepository;
     }
 
-    @GetMapping
-    public List<ReservationResponse> getAll() {
-        return reservationService.getAll();
+    @PostMapping("/reservations/new")
+    public String create(@Valid @ModelAttribute ReservationForm reservationForm,
+                         BindingResult bindingResult,
+                         Authentication authentication,
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
+        Room room = roomRepository.findById(reservationForm.getRoomId())
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("room", room);
+            return "reservations/form";
+        }
+        try {
+            String username = authentication != null && authentication.isAuthenticated()
+                    && !"anonymousUser".equals(authentication.getName()) ? authentication.getName() : null;
+            Reservation reservation = reservationService.create(reservationForm, username);
+            redirectAttributes.addFlashAttribute("success", "Reservation request submitted.");
+            return "redirect:/reservations/confirmation/" + reservation.getId();
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("reservation", ex.getMessage());
+            model.addAttribute("room", room);
+            return "reservations/form";
+        }
     }
 
-    @GetMapping("/{id}")
-    public ReservationResponse getById(@PathVariable Long id) {
-        return reservationService.getById(id);
+    @GetMapping("/reservations/confirmation/{id}")
+    public String confirmation(@PathVariable Long id, Model model) {
+        model.addAttribute("reservation", reservationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Reservation not found")));
+        return "reservations/confirmation";
     }
 
-    @PostMapping
-    public ResponseEntity<ReservationResponse> create(@Valid @RequestBody ReservationCreateRequest request) {
-        return new ResponseEntity<>(reservationService.create(request), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}/cancel")
-    public ReservationResponse cancel(@PathVariable Long id) {
-        return reservationService.cancel(id);
-    }
-
-    @PutMapping("/{id}/confirm")
-    public ReservationResponse confirm(@PathVariable Long id) {
-        return reservationService.confirm(id);
-    }
-
-    @GetMapping("/availability")
-    public List<RoomResponse> getAvailability(@RequestParam @NotNull Long hotelId,
-                                              @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                                              LocalDate checkInDate,
-                                              @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                                              LocalDate checkOutDate,
-                                              @RequestParam @NotNull @Min(1) Integer guests) {
-        return reservationService.getAvailability(hotelId, checkInDate, checkOutDate, guests);
+    @GetMapping("/reservations/my")
+    public String myReservations(Authentication authentication, Model model) {
+        String username = authentication.getName();
+        String email = userRepository.findByUsername(username)
+                .map(user -> user.getEmail())
+                .orElse("");
+        model.addAttribute("reservations", reservationRepository.findGuestReservations(username, email));
+        return "reservations/my";
     }
 }
-

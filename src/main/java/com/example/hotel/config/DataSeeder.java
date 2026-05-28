@@ -2,301 +2,184 @@ package com.example.hotel.config;
 
 import com.example.hotel.entity.Conversation;
 import com.example.hotel.entity.ConversationCategory;
-import com.example.hotel.entity.ConversationMessage;
-import com.example.hotel.entity.Guest;
-import com.example.hotel.entity.Hotel;
+import com.example.hotel.entity.ConversationStatus;
+import com.example.hotel.entity.ConversationTurn;
 import com.example.hotel.entity.MessageRole;
 import com.example.hotel.entity.Reservation;
 import com.example.hotel.entity.ReservationStatus;
 import com.example.hotel.entity.Room;
-import com.example.hotel.entity.RoomStatus;
 import com.example.hotel.entity.RoomType;
+import com.example.hotel.entity.User;
+import com.example.hotel.entity.UserRole;
 import com.example.hotel.repository.ConversationRepository;
-import com.example.hotel.repository.GuestRepository;
-import com.example.hotel.repository.HotelRepository;
 import com.example.hotel.repository.ReservationRepository;
 import com.example.hotel.repository.RoomRepository;
-import com.example.hotel.repository.RoomTypeRepository;
-import net.datafaker.Faker;
+import com.example.hotel.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
 
 @Component
 @Profile("!test")
 public class DataSeeder implements CommandLineRunner {
 
-    private static final int HOTEL_COUNT = 10;
-    private static final int ROOM_TYPES_COUNT = 6;
-    private static final int ROOMS_PER_HOTEL = 30;
-    private static final int GUEST_COUNT = 150;
-    private static final int RESERVATION_COUNT = 250;
-    private static final int ROOMS_PER_FLOOR = 5;
-
-    private final HotelRepository hotelRepository;
-    private final RoomTypeRepository roomTypeRepository;
+    private final UserRepository userRepository;
     private final RoomRepository roomRepository;
-    private final GuestRepository guestRepository;
     private final ReservationRepository reservationRepository;
     private final ConversationRepository conversationRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(HotelRepository hotelRepository,
-                      RoomTypeRepository roomTypeRepository,
+    public DataSeeder(UserRepository userRepository,
                       RoomRepository roomRepository,
-                      GuestRepository guestRepository,
                       ReservationRepository reservationRepository,
-                      ConversationRepository conversationRepository) {
-        this.hotelRepository = hotelRepository;
-        this.roomTypeRepository = roomTypeRepository;
+                      ConversationRepository conversationRepository,
+                      PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
         this.roomRepository = roomRepository;
-        this.guestRepository = guestRepository;
         this.reservationRepository = reservationRepository;
         this.conversationRepository = conversationRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
-        resetData();
-
-        Faker faker = new Faker(new Locale("en"), new Random(42));
-        List<RoomType> roomTypes = seedRoomTypes(faker);
-        List<Hotel> hotels = seedHotels(faker);
-        seedConversations(hotels);
-        List<Room> rooms = seedRooms(faker, hotels, roomTypes);
-        List<Guest> guests = seedGuests(faker);
-        seedReservations(faker, rooms, guests);
+        if (userRepository.count() == 0) {
+            seedUsers();
+        }
+        if (roomRepository.count() == 0) {
+            seedRooms();
+        }
+        normalizeRooms();
+        if (reservationRepository.count() == 0 && roomRepository.count() > 0) {
+            seedReservations();
+        }
+        if (conversationRepository.count() == 0) {
+            seedConversations();
+        }
     }
 
-    private void resetData() {
-        reservationRepository.deleteAll();
-        conversationRepository.deleteAll();
-        roomRepository.deleteAll();
-        guestRepository.deleteAll();
-        roomTypeRepository.deleteAll();
-        hotelRepository.deleteAll();
+    private void seedUsers() {
+        userRepository.save(user("admin", "admin@hotel.test", "admin", UserRole.ADMIN));
+        userRepository.save(user("manager", "manager@hotel.test", "admin", UserRole.ADMIN));
+        userRepository.save(user("guest", "guest@hotel.test", "guest", UserRole.GUEST));
     }
 
-    private void seedConversations(List<Hotel> hotels) {
+    private User user(String username, String email, String password, UserRole role) {
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        return user;
+    }
+
+    private void seedRooms() {
+        roomRepository.save(room("Garden Single", RoomType.SINGLE, "A quiet single room overlooking the courtyard.", "119.00", "4.6", 1,
+                "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80", true, false,
+                "WiFi,Desk,Courtyard view,Tea station"));
+        roomRepository.save(room("Classic Double", RoomType.DOUBLE, "Warm double room with a queen bed and generous natural light.", "169.00", "4.8", 2,
+                "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80", true, false,
+                "WiFi,Queen bed,Smart TV,Mini fridge"));
+        roomRepository.save(room("Executive Double", RoomType.DOUBLE, "Spacious double room with a work area and city view.", "219.00", "4.7", 2,
+                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80", true, false,
+                "WiFi,Workspace,City view,Espresso machine"));
+        roomRepository.save(room("Family Suite", RoomType.SUITE, "Two-room suite designed for families and longer stays.", "319.00", "4.9", 4,
+                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80", true, false,
+                "WiFi,Sofa bed,Kitchenette,Bathrobes"));
+        roomRepository.save(room("Terrace Suite", RoomType.SUITE, "Premium suite with a private terrace and lounge area.", "429.00", "5.0", 3,
+                "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80", true, false,
+                "WiFi,Terrace,Lounge,Evening turndown"));
+        roomRepository.save(room("Atrium Double", RoomType.DOUBLE, "A refreshed double room currently held for renovation work.", "149.00", "4.4", 2,
+                "https://images.unsplash.com/photo-1598928636135-d146006ff4be?auto=format&fit=crop&w=1200&q=80", true, true,
+                "WiFi,Queen bed,Walk-in shower"));
+    }
+
+    private Room room(String name, RoomType type, String description, String price, String rating, int capacity, String imageUrl,
+                      boolean available, boolean underRenovation, String amenities) {
+        Room room = new Room();
+        room.setName(name);
+        room.setRoomType(type);
+        room.setDescription(description);
+        room.setPricePerNight(new BigDecimal(price));
+        room.setRating(new BigDecimal(rating));
+        room.setCapacity(capacity);
+        room.setImageUrl(imageUrl);
+        room.setAvailable(available);
+        room.setUnderRenovation(underRenovation);
+        room.setAmenities(amenities);
+        return room;
+    }
+
+    private void normalizeRooms() {
+        for (Room room : roomRepository.findAll()) {
+            boolean changed = false;
+            if (room.getRating() == null) {
+                room.setRating(new BigDecimal("4.7"));
+                changed = true;
+            }
+            if (room.isUnderRenovation() && room.isAvailable()) {
+                room.setAvailable(false);
+                changed = true;
+            }
+            if (changed) {
+                roomRepository.save(room);
+            }
+        }
+    }
+
+    private void seedReservations() {
+        User guest = userRepository.findByUsername("guest").orElse(null);
+        Room room = roomRepository.findAll().get(0);
+        Reservation reservation = new Reservation();
+        reservation.setGuestUser(guest);
+        reservation.setRoom(room);
+        reservation.setCheckIn(LocalDate.now());
+        reservation.setCheckOut(LocalDate.now().plusDays(2));
+        reservation.setGuestName("Sample Guest");
+        reservation.setGuestEmail("guest@hotel.test");
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setTotalPrice(room.getPricePerNight().multiply(BigDecimal.valueOf(2)));
+        reservationRepository.save(reservation);
+    }
+
+    private void seedConversations() {
         List<ConversationSeed> seeds = List.of(
-                new ConversationSeed("Parking question", ConversationCategory.PARKING,
-                        "Guest asks about parking",
-                        "Do you have parking?",
-                        "Yes, we offer free parking for all hotel guests."),
-                new ConversationSeed("Breakfast included", ConversationCategory.BREAKFAST,
-                        "Guest asks about breakfast",
-                        "Is breakfast included?",
-                        "Breakfast is included with most rates and served daily."),
-                new ConversationSeed("Check-in time", ConversationCategory.CHECK_IN,
-                        "Guest asks about check-in",
-                        "What time is check-in?",
-                        "Check-in starts at 3 PM, and early check-in is subject to availability."),
-                new ConversationSeed("Check-out time", ConversationCategory.CHECK_OUT,
-                        "Guest asks about check-out",
-                        "What time is check-out?",
-                        "Check-out is at 11 AM, and late check-out may be available upon request."),
-                new ConversationSeed("Double room booking", ConversationCategory.RESERVATION,
-                        "Guest wants a double room",
-                        "Can I book a double room for two nights?",
-                        "Yes, we have double rooms available. Please share your dates."),
-                new ConversationSeed("Cancellation policy", ConversationCategory.CANCELLATION,
-                        "Guest asks about cancellation",
-                        "What is your cancellation policy?",
-                        "Cancellations are free up to 24 hours before arrival for flexible rates."),
-                new ConversationSeed("Room cleaning complaint", ConversationCategory.COMPLAINT,
-                        "Guest reports a complaint",
-                        "My room was not cleaned today.",
-                        "I'm sorry about that. We will have housekeeping assist immediately."),
-                new ConversationSeed("Payment methods", ConversationCategory.PAYMENT,
-                        "Guest asks about payment",
-                        "What payment methods do you accept?",
-                        "We accept major credit cards and contactless payments at the front desk.")
+                new ConversationSeed("Booking dates", ConversationCategory.BOOKING, ConversationStatus.APPROVED, "Do you have double rooms next weekend?", "Yes, please choose a double room on the rooms page and submit your dates."),
+                new ConversationSeed("Suite amenities", ConversationCategory.AMENITIES, ConversationStatus.APPROVED, "Does the suite include a kitchenette?", "Our Family Suite includes a kitchenette, lounge area, WiFi, and bathrobes."),
+                new ConversationSeed("Late check-out", ConversationCategory.GENERAL, ConversationStatus.APPROVED, "Can I check out late?", "Late check-out may be available depending on occupancy. Please ask reception the night before."),
+                new ConversationSeed("Parking availability", ConversationCategory.AMENITIES, ConversationStatus.APPROVED, "Is parking available?", "Yes, on-site parking is available for overnight hotel guests."),
+                new ConversationSeed("Room service hours", ConversationCategory.ROOM_SERVICE, ConversationStatus.APPROVED, "Can I order dinner to my room?", "Room service is available for dinner, and our restaurant team can deliver to your room."),
+                new ConversationSeed("Noise complaint", ConversationCategory.COMPLAINTS, ConversationStatus.DRAFT, "The room next door is very loud.", "We are sorry for the disturbance. Our front desk can contact the room or help arrange a quieter space."),
+                new ConversationSeed("Pet policy", ConversationCategory.GENERAL, ConversationStatus.APPROVED, "Can I bring a small dog?", "Small pets are welcome in selected rooms when noted during booking."),
+                new ConversationSeed("Breakfast timing", ConversationCategory.AMENITIES, ConversationStatus.APPROVED, "What time is breakfast?", "Breakfast is served from 6:30 AM to 10:30 AM."),
+                new ConversationSeed("Cancellation policy", ConversationCategory.BOOKING, ConversationStatus.APPROVED, "How do I cancel a reservation?", "Flexible reservations can usually be cancelled up to 24 hours before arrival."),
+                new ConversationSeed("WiFi access", ConversationCategory.AMENITIES, ConversationStatus.APPROVED, "Do rooms have internet?", "Complimentary high-speed WiFi is available in all rooms and public areas.")
         );
-
-        for (int i = 0; i < seeds.size(); i++) {
-            ConversationSeed seed = seeds.get(i);
-            Hotel hotel = hotels.isEmpty() ? null : hotels.get(i % hotels.size());
+        for (ConversationSeed seed : seeds) {
             Conversation conversation = new Conversation();
             conversation.setTitle(seed.title());
             conversation.setCategory(seed.category());
-            conversation.setLanguage("English");
-            conversation.setDescription(seed.description());
-            conversation.setHotel(hotel);
-
-            List<ConversationMessage> messages = new ArrayList<>();
-            messages.add(buildMessage(conversation, MessageRole.SYSTEM, 1,
-                    "You are a helpful hotel assistant."));
-            messages.add(buildMessage(conversation, MessageRole.USER, 2, seed.userMessage()));
-            messages.add(buildMessage(conversation, MessageRole.ASSISTANT, 3, seed.assistantMessage()));
-            conversation.setMessages(messages);
-
+            conversation.setStatus(seed.status());
+            ConversationTurn userTurn = turn(MessageRole.USER, seed.userMessage());
+            ConversationTurn assistantTurn = turn(MessageRole.ASSISTANT, seed.assistantMessage());
+            conversation.replaceTurns(List.of(userTurn, assistantTurn));
             conversationRepository.save(conversation);
         }
     }
 
-    private ConversationMessage buildMessage(Conversation conversation, MessageRole role, int orderNumber, String content) {
-        ConversationMessage message = new ConversationMessage();
-        message.setConversation(conversation);
-        message.setRole(role);
-        message.setOrderNumber(orderNumber);
-        message.setContent(content);
-        return message;
+    private ConversationTurn turn(MessageRole role, String content) {
+        ConversationTurn turn = new ConversationTurn();
+        turn.setRole(role);
+        turn.setContent(content);
+        return turn;
     }
 
-    private record ConversationSeed(String title,
-                                    ConversationCategory category,
-                                    String description,
-                                    String userMessage,
-                                    String assistantMessage) {
-    }
-
-    private List<RoomType> seedRoomTypes(Faker faker) {
-        List<RoomType> roomTypes = new ArrayList<>();
-        String[][] defaults = {
-                {"Standard", "Standard room with queen bed", "2", "129.00"},
-                {"Deluxe", "Deluxe room with king bed", "2", "169.00"},
-                {"Suite", "Suite with living area", "4", "249.00"},
-                {"Family", "Family room with two beds", "5", "219.00"},
-                {"Executive", "Executive room with workspace", "2", "189.00"},
-                {"Penthouse", "Top floor premium suite", "4", "349.00"}
-        };
-
-        for (int i = 0; i < ROOM_TYPES_COUNT; i++) {
-            String[] source = defaults[i % defaults.length];
-            RoomType roomType = new RoomType();
-            roomType.setName(source[0]);
-            roomType.setDescription(source[1]);
-            roomType.setMaxGuests(Integer.parseInt(source[2]));
-            roomType.setBasePricePerNight(new BigDecimal(source[3]));
-            roomTypes.add(roomTypeRepository.save(roomType));
-        }
-
-        return roomTypes;
-    }
-
-    private List<Hotel> seedHotels(Faker faker) {
-        List<Hotel> hotels = new ArrayList<>();
-        for (int i = 0; i < HOTEL_COUNT; i++) {
-            String companyName = faker.company().name();
-            Hotel hotel = new Hotel();
-            hotel.setName(companyName + " Hotel");
-            hotel.setDescription(faker.company().catchPhrase());
-            hotel.setAddress(faker.address().streetAddress());
-            hotel.setCity(faker.address().city());
-            hotel.setCountry(faker.address().country());
-            hotel.setPhone(faker.phoneNumber().phoneNumber());
-            hotel.setEmail("info@" + slugify(companyName) + ".example");
-            hotel.setStarRating(3 + faker.random().nextInt(3));
-            hotels.add(hotelRepository.save(hotel));
-        }
-        return hotels;
-    }
-
-    private List<Room> seedRooms(Faker faker, List<Hotel> hotels, List<RoomType> roomTypes) {
-        List<Room> rooms = new ArrayList<>();
-        for (Hotel hotel : hotels) {
-            for (int i = 0; i < ROOMS_PER_HOTEL; i++) {
-                int floor = (i / ROOMS_PER_FLOOR) + 1;
-                int roomIndex = (i % ROOMS_PER_FLOOR) + 1;
-                Room room = new Room();
-                room.setRoomNumber(String.valueOf((floor * 100) + roomIndex));
-                room.setFloor(floor);
-                room.setStatus(randomRoomStatus(faker));
-                room.setHotel(hotel);
-                room.setRoomType(roomTypes.get(faker.random().nextInt(roomTypes.size())));
-                rooms.add(roomRepository.save(room));
-            }
-        }
-        return rooms;
-    }
-
-    private List<Guest> seedGuests(Faker faker) {
-        List<Guest> guests = new ArrayList<>();
-        for (int i = 0; i < GUEST_COUNT; i++) {
-            Guest guest = new Guest();
-            guest.setFirstName(faker.name().firstName());
-            guest.setLastName(faker.name().lastName());
-            guest.setEmail("guest" + (i + 1) + "@example.com");
-            guest.setPhone(faker.phoneNumber().phoneNumber());
-            guests.add(guestRepository.save(guest));
-        }
-        return guests;
-    }
-
-    private void seedReservations(Faker faker, List<Room> rooms, List<Guest> guests) {
-        List<Room> availableRooms = rooms.stream()
-                .filter(room -> room.getStatus() == RoomStatus.AVAILABLE)
-                .toList();
-
-        if (availableRooms.isEmpty()) {
-            return;
-        }
-
-        Map<Long, LocalDate> nextStartDate = new HashMap<>();
-        LocalDate now = LocalDate.now();
-        for (Room room : availableRooms) {
-            nextStartDate.put(room.getId(), now.minusDays(120));
-        }
-
-        for (int i = 0; i < RESERVATION_COUNT; i++) {
-            Room room = availableRooms.get(faker.random().nextInt(availableRooms.size()));
-            LocalDate start = nextStartDate.get(room.getId()).plusDays(faker.random().nextInt(14) + 1);
-            int nights = faker.random().nextInt(7) + 1;
-            LocalDate end = start.plusDays(nights);
-
-            RoomType roomType = room.getRoomType();
-            int maxGuests = roomType.getMaxGuests();
-            int guestsCount = faker.random().nextInt(maxGuests) + 1;
-
-            Reservation reservation = new Reservation();
-            reservation.setGuest(guests.get(faker.random().nextInt(guests.size())));
-            reservation.setRoom(room);
-            reservation.setCheckInDate(start);
-            reservation.setCheckOutDate(end);
-            reservation.setNumberOfGuests(guestsCount);
-            reservation.setTotalPrice(roomType.getBasePricePerNight()
-                    .multiply(BigDecimal.valueOf(nights)));
-            reservation.setStatus(resolveStatus(now, end, faker));
-            reservationRepository.save(reservation);
-
-            nextStartDate.put(room.getId(), end.plusDays(faker.random().nextInt(10) + 1));
-        }
-    }
-
-    private RoomStatus randomRoomStatus(Faker faker) {
-        int roll = faker.random().nextInt(100);
-        if (roll < 80) {
-            return RoomStatus.AVAILABLE;
-        }
-        if (roll < 95) {
-            return RoomStatus.MAINTENANCE;
-        }
-        return RoomStatus.OUT_OF_SERVICE;
-    }
-
-    private ReservationStatus resolveStatus(LocalDate now, LocalDate checkOutDate, Faker faker) {
-        if (checkOutDate.isBefore(now)) {
-            return ReservationStatus.COMPLETED;
-        }
-        int roll = faker.random().nextInt(100);
-        if (roll < 10) {
-            return ReservationStatus.CANCELLED;
-        }
-        if (roll < 55) {
-            return ReservationStatus.CONFIRMED;
-        }
-        return ReservationStatus.PENDING;
-    }
-
-    private String slugify(String input) {
-        return input.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    private record ConversationSeed(String title, ConversationCategory category, ConversationStatus status,
+                                    String userMessage, String assistantMessage) {
     }
 }

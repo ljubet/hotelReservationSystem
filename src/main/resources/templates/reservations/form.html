@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Reserve')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<main id="main-content" class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-5">
+            <img th:src="${room.imageUrl}" class="img-fluid rounded mb-3" th:alt="${room.name}">
+            <h1 class="h3" th:text="${room.name}">Room</h1>
+            <p class="text-muted" th:text="${room.description}">Description</p>
+            <p class="h5" id="pricePerNight" th:data-price="${room.pricePerNight}" th:text="${'$' + room.pricePerNight + ' / night'}">$169</p>
+        </div>
+        <div class="col-lg-7">
+            <h2 class="h3 mb-4">Reservation Request</h2>
+            <form th:action="@{/reservations/new}" th:object="${reservationForm}" method="post" class="card guest-card p-4">
+                <input type="hidden" th:field="*{roomId}">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="checkIn">Check-in</label>
+                        <input id="checkIn" type="date" th:field="*{checkIn}" class="form-control">
+                        <div class="text-danger small" th:errors="*{checkIn}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="checkOut">Check-out</label>
+                        <input id="checkOut" type="date" th:field="*{checkOut}" class="form-control">
+                        <div class="text-danger small" th:errors="*{checkOut}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="guestName">Guest name</label>
+                        <input id="guestName" th:field="*{guestName}" class="form-control">
+                        <div class="text-danger small" th:errors="*{guestName}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="guestEmail">Email</label>
+                        <input id="guestEmail" th:field="*{guestEmail}" class="form-control">
+                        <div class="text-danger small" th:errors="*{guestEmail}"></div>
+                    </div>
+                </div>
+                <div class="bg-light rounded p-3 my-4">
+                    <span class="text-muted">Estimated total</span>
+                    <strong class="d-block fs-4" id="totalPrice">$0.00</strong>
+                </div>
+                <button class="btn btn-gold" type="submit">Submit Reservation</button>
+            </form>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+<script>
+    const price = Number(document.getElementById('pricePerNight').dataset.price);
+    const checkIn = document.getElementById('checkIn');
+    const checkOut = document.getElementById('checkOut');
+    const total = document.getElementById('totalPrice');
+    function updateTotal() {
+        if (!checkIn.value || !checkOut.value) {
+            total.textContent = '$0.00';
+            return;
+        }
+        const nights = Math.round((new Date(checkOut.value) - new Date(checkIn.value)) / 86400000);
+        total.textContent = nights > 0 ? '$' + (nights * price).toFixed(2) : '$0.00';
+    }
+    checkIn.addEventListener('change', updateTotal);
+    checkOut.addEventListener('change', updateTotal);
+    updateTotal();
+</script>
+</body>
+</html>

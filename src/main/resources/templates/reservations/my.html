@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Reservations')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<main id="main-content" class="container py-5">
+    <section class="reservation-hero p-4 p-lg-5 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end">
+            <div>
+                <p class="text-uppercase small fw-semibold text-muted mb-2">Guest bookings</p>
+                <h1 class="h2 mb-2">My Reservations</h1>
+                <p class="text-muted mb-0">Track upcoming stays, pending requests, and confirmed bookings attached to your account.</p>
+            </div>
+            <a class="btn btn-gold" th:href="@{/rooms}">Book Another Room</a>
+        </div>
+    </section>
+
+    <div class="d-grid gap-4">
+        <article class="reservation-card" th:each="reservation : ${reservations}">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <img class="w-100 reservation-thumb" th:src="${reservation.room.imageUrl}" th:alt="${reservation.room.name}">
+                </div>
+                <div class="col-md-8">
+                    <div class="p-4 h-100 d-flex flex-column">
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">
+                                    <a class="link-dark text-decoration-none" th:href="@{/rooms/{id}(id=${reservation.room.id})}" th:text="${reservation.room.name}">Room</a>
+                                </h2>
+                                <div class="text-muted small" th:text="${reservation.guestName + ' / ' + reservation.guestEmail}">Guest</div>
+                            </div>
+                            <span class="badge align-self-start"
+                                  th:classappend="${reservation.status.name() == 'CONFIRMED'} ? ' text-bg-success' : (${reservation.status.name() == 'CANCELLED'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                  th:text="${reservation.status}">PENDING</span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Check-in</div>
+                                <strong th:text="${reservation.checkIn}">2026-05-29</strong>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Check-out</div>
+                                <strong th:text="${reservation.checkOut}">2026-06-05</strong>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Total</div>
+                                <strong th:text="${'$' + reservation.totalPrice}">$833</strong>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto d-flex flex-column flex-md-row justify-content-between gap-2 align-items-md-center border-top pt-3">
+                            <span class="small text-muted" th:text="${'Requested ' + #temporals.format(reservation.createdAt, 'MMM d, yyyy HH:mm')}">Requested date</span>
+                            <a class="btn btn-outline-dark btn-sm" th:href="@{/rooms/{id}(id=${reservation.room.id})}">View Room</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <div th:if="${#lists.isEmpty(reservations)}" class="reservation-card p-5 text-center">
+            <h2 class="h4">No reservations yet</h2>
+            <p class="text-muted">When you book a room, your request will appear here.</p>
+            <a class="btn btn-gold" th:href="@{/rooms}">Browse Rooms</a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

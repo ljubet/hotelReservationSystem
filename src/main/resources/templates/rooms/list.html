@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Rooms')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+<main id="main-content" class="container py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2">Rooms</h1>
+            <p class="text-muted mb-0">Compare room types, capacity, and nightly rates.</p>
+        </div>
+        <form class="row g-2 align-items-end" method="get" th:action="@{/rooms}">
+            <div class="col-12 col-md-auto">
+                <label class="form-label small" for="roomType">Type</label>
+                <select id="roomType" name="roomType" class="form-select">
+                    <option value="">All</option>
+                    <option th:each="type : ${roomTypes}" th:value="${type}" th:text="${type}" th:selected="${type == selectedRoomType}"></option>
+                </select>
+            </div>
+            <div class="col-6 col-md-auto">
+                <label class="form-label small" for="maxPrice">Max price</label>
+                <input id="maxPrice" name="maxPrice" type="number" min="1" step="1" class="form-control" th:value="${maxPrice}">
+            </div>
+            <div class="col-6 col-md-auto">
+                <label class="form-label small" for="minCapacity">Min capacity</label>
+                <input id="minCapacity" name="minCapacity" type="number" min="1" class="form-control" th:value="${minCapacity}">
+            </div>
+            <div class="col-6 col-md-auto">
+                <label class="form-label small" for="size">Show</label>
+                <select id="size" name="size" class="form-select">
+                    <option th:each="option : ${pageSizes}" th:value="${option}" th:text="${option + ' rooms'}" th:selected="${option == pageSize}"></option>
+                </select>
+            </div>
+            <div class="col-12 col-md-auto">
+                <button class="btn btn-gold w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+        <p class="text-muted mb-0" th:if="${totalRooms > 0}" th:text="${'Showing ' + startItem + '-' + endItem + ' of ' + totalRooms + ' rooms'}">Showing 1-20 of 78 rooms</p>
+        <p class="text-muted mb-0" th:if="${totalRooms == 0}">No rooms match those filters.</p>
+        <a th:if="${selectedRoomType != null or maxPrice != null or minCapacity != null}" th:href="@{/rooms(size=${pageSize})}" class="btn btn-sm btn-outline-dark align-self-start align-self-md-auto">Clear filters</a>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-4" th:each="room : ${rooms}">
+            <div class="card guest-card h-100">
+                <img th:src="${room.imageUrl}" class="card-img-top" th:alt="${room.name}">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between gap-3">
+                        <h2 class="h5" th:text="${room.name}">Room</h2>
+                        <span class="badge text-bg-secondary" th:text="${room.roomType}">DOUBLE</span>
+                    </div>
+                    <div class="room-rating small mb-2"><span>&#9733;</span> <span th:text="${room.rating + '/5 guest rating'}">4.8/5 guest rating</span></div>
+                    <p class="text-muted flex-grow-1" th:text="${room.description}">Description</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold" th:text="${'$' + room.pricePerNight + ' / night'}">$169</span>
+                        <span th:if="${room.underRenovation or !room.available}" class="badge text-bg-warning">Unavailable</span>
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                        <a class="btn btn-outline-dark" th:href="@{/rooms/{id}(id=${room.id})}">Details</a>
+                        <a th:if="${room.bookable}" class="btn btn-gold" th:href="@{/reservations/new(roomId=${room.id})}">Book</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav th:if="${totalPages > 1}" class="mt-5" aria-label="Rooms pagination">
+        <ul class="pagination justify-content-center flex-wrap gap-1">
+            <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/rooms(roomType=${selectedRoomType}, maxPrice=${maxPrice}, minCapacity=${minCapacity}, size=${pageSize}, page=${currentPage - 1})}"
+                   aria-label="Previous page">Previous</a>
+            </li>
+            <li class="page-item" th:each="pageNumber : ${#numbers.sequence(1, totalPages)}" th:classappend="${pageNumber == currentPage} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/rooms(roomType=${selectedRoomType}, maxPrice=${maxPrice}, minCapacity=${minCapacity}, size=${pageSize}, page=${pageNumber})}"
+                   th:text="${pageNumber}"
+                   th:aria-label="${'Go to page ' + pageNumber}">1</a>
+            </li>
+            <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/rooms(roomType=${selectedRoomType}, maxPrice=${maxPrice}, minCapacity=${minCapacity}, size=${pageSize}, page=${currentPage + 1})}"
+                   aria-label="Next page">Next</a>
+            </li>
+        </ul>
+    </nav>
+</main>
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

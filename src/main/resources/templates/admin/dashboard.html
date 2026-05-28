@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin Dashboard')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+        <h1 class="h3 mb-4">Dashboard</h1>
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Rooms</span><strong class="fs-3" th:text="${totalRooms}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Active Today</span><strong class="fs-3" th:text="${activeReservationsToday}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Unanswered Chat</span><strong class="fs-3" th:text="${unansweredMessages}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Conversations</span><strong class="fs-3" th:text="${totalConversations}">0</strong></div></div>
+        </div>
+        <div class="row g-4">
+            <div class="col-xl-7">
+                <div class="card p-3">
+                    <h2 class="h5">Today's Check-ins and Check-outs</h2>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead><tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
+                            <tbody>
+                            <tr th:each="reservation : ${todayReservations}">
+                                <td th:text="${reservation.guestName}">Guest</td>
+                                <td th:text="${reservation.room.name}">Room</td>
+                                <td th:text="${reservation.checkIn}">Date</td>
+                                <td th:text="${reservation.checkOut}">Date</td>
+                                <td><span class="badge text-bg-secondary" th:text="${reservation.status}">Status</span></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(todayReservations)}"><td colspan="5" class="text-muted">No activity today.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="card p-3">
+                    <h2 class="h5">Recent Unanswered Messages</h2>
+                    <div class="list-group list-group-flush">
+                        <a class="list-group-item list-group-item-action" th:each="message : ${recentMessages}" th:href="@{/admin/chat/{id}(id=${message.id})}">
+                            <div class="fw-semibold" th:text="${message.senderName}">Guest</div>
+                            <div class="small text-muted" th:text="${message.question}">Question</div>
+                        </a>
+                        <div th:if="${#lists.isEmpty(recentMessages)}" class="text-muted">Inbox is clear.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Confirmation')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+<main id="main-content" class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card guest-card p-4">
+                <h1 class="h3">Reservation Received</h1>
+                <p class="text-muted">Your request is pending hotel confirmation.</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Room</dt><dd class="col-sm-8" th:text="${reservation.room.name}">Room</dd>
+                    <dt class="col-sm-4">Guest</dt><dd class="col-sm-8" th:text="${reservation.guestName}">Guest</dd>
+                    <dt class="col-sm-4">Email</dt><dd class="col-sm-8" th:text="${reservation.guestEmail}">Email</dd>
+                    <dt class="col-sm-4">Dates</dt><dd class="col-sm-8" th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</dd>
+                    <dt class="col-sm-4">Status</dt><dd class="col-sm-8" th:text="${reservation.status}">PENDING</dd>
+                    <dt class="col-sm-4">Total</dt><dd class="col-sm-8 fw-semibold" th:text="${'$' + reservation.totalPrice}">$338</dd>
+                </dl>
+                <a class="btn btn-gold mt-4" th:href="@{/rooms}">Browse More Rooms</a>
+            </div>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

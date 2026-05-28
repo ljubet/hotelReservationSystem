@@ -1,46 +1,222 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${pageTitle}">Hotel Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<head th:replace="~{fragments/layout :: head('Home')}"></head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">Hotel Management</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbars">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbars">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/hotels">Hotels</a></li>
-                <li class="nav-item"><a class="nav-link" href="/room-types">Room Types</a></li>
-                <li class="nav-item"><a class="nav-link" href="/rooms">Rooms</a></li>
-                <li class="nav-item"><a class="nav-link" href="/guests">Guests</a></li>
-                <li class="nav-item"><a class="nav-link" href="/reservations">Reservations</a></li>
-                <li class="nav-item"><a class="nav-link" href="/availability">Availability</a></li>
-                <li class="nav-item"><a class="nav-link" href="/conversations">Conversations</a></li>
-                <li class="nav-item"><a class="nav-link" href="/chat">Chat Simulation</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
 
-<main class="container py-4">
-    <div class="p-4 bg-light rounded-3">
-        <h1 class="display-6">Hotel Management Dashboard</h1>
-        <p class="lead">Use the navigation to manage hotels, rooms, guests, and reservations.</p>
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-primary" href="/hotels">Manage Hotels</a>
-            <a class="btn btn-secondary" href="/rooms">Manage Rooms</a>
-            <a class="btn btn-outline-primary" href="/reservations">Manage Reservations</a>
+<section class="hero">
+    <div class="container">
+        <div class="col-lg-7">
+            <p class="text-uppercase fw-semibold small mb-3">Boutique stays with fast answers</p>
+            <h1 class="display-3 fw-bold">Aurora Hotel</h1>
+            <p class="lead mb-4">Browse rooms, reserve your stay, and get quick answers from our hotel chat assistant.</p>
+            <a class="btn btn-gold btn-lg pulse-soft" th:href="@{/rooms}">Book Now</a>
         </div>
     </div>
+</section>
+
+<main id="main-content">
+    <section class="container landing-section reveal-on-scroll" aria-labelledby="welcome-title">
+        <div class="arrival-story">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-lg-6">
+                    <img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80" alt="Aurora Hotel lounge with warm seating and large windows">
+                </div>
+                <div class="col-lg-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
+                    <p class="text-uppercase small fw-semibold text-muted mb-2">Arrive easy</p>
+                    <h2 id="welcome-title" class="display-6 fw-semibold">Quiet comfort, useful service, and rooms that feel ready.</h2>
+                    <p class="text-muted mt-3">Aurora keeps the essentials close: quick booking, clear room details, thoughtful amenities, and a hotel chat that answers common questions before you even reach the desk.</p>
+                    <div class="row g-4 mt-3">
+                        <div class="col-sm-4">
+                            <div class="stat-tile">
+                                <strong>24/7</strong>
+                                <span class="small text-muted">Guest help</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="stat-tile">
+                                <strong>4.8</strong>
+                                <span class="small text-muted">Average room rating</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="stat-tile">
+                                <strong>6</strong>
+                                <span class="small text-muted">Room styles</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a class="btn btn-gold" th:href="@{/rooms}">Explore Rooms</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container landing-section pt-0 reveal-on-scroll" aria-labelledby="featured-title">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+            <div>
+                <h2 id="featured-title" class="h3">Featured Rooms</h2>
+                <p class="text-muted mb-0">Guest favorites, ready for the next reservation.</p>
+            </div>
+            <a th:href="@{/rooms}" class="btn btn-outline-dark align-self-start align-self-md-auto">All Rooms</a>
+        </div>
+        <div class="carousel-mobile-controls gap-2">
+            <button class="btn btn-outline-dark round-control" type="button" data-scroll-target="#featuredRooms" data-scroll-direction="left" aria-label="Previous rooms">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="btn btn-outline-dark round-control" type="button" data-scroll-target="#featuredRooms" data-scroll-direction="right" aria-label="Next rooms">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        <div class="carousel-shell">
+            <button class="btn round-control carousel-edge-control carousel-desktop-control" type="button" data-scroll-target="#featuredRooms" data-scroll-direction="left" aria-label="Previous rooms">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div id="featuredRooms" class="room-strip" aria-label="Featured room carousel">
+                <div class="room-slide" th:each="room : ${featuredRooms}">
+                    <div class="card guest-card h-100">
+                        <img th:src="${room.imageUrl}" class="card-img-top" th:alt="${room.name}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between gap-3">
+                                <h3 class="h5" th:text="${room.name}">Room</h3>
+                                <span class="room-rating"><span>&#9733;</span> <span th:text="${room.rating + '/5'}">4.8/5</span></span>
+                            </div>
+                            <p class="text-muted" th:text="${room.description}">Description</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="fw-semibold" th:text="${'$' + room.pricePerNight + ' / night'}">$169 / night</span>
+                                <span class="small text-muted" th:text="${room.capacity + ' guests'}">2 guests</span>
+                            </div>
+                            <a class="btn btn-gold" th:href="@{/rooms/{id}(id=${room.id})}">View Room</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn round-control carousel-edge-control carousel-desktop-control" type="button" data-scroll-target="#featuredRooms" data-scroll-direction="right" aria-label="Next rooms">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<section class="container landing-section reveal-on-scroll" aria-labelledby="events-title">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end mb-4">
+        <div>
+            <h2 id="events-title" class="h3">This Week At Aurora</h2>
+            <p class="text-muted mb-0">Small moments around the hotel, from lobby music to fresh breakfast specials.</p>
+        </div>
+        <span class="event-date"><i class="bi bi-calendar2-week"></i> Updated daily</span>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <article class="event-card event-card-feature">
+                <img src="https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=1200&q=80" alt="Live jazz performers in a warm hotel lounge">
+                <div class="p-4">
+                    <span class="event-date mb-3"><i class="bi bi-music-note-beamed"></i> Friday, 8 PM</span>
+                    <h3 class="h4">Lobby Jazz Night</h3>
+                    <p class="text-muted mb-0">Live trio, seasonal mocktails, and a relaxed late check-in welcome in the lounge.</p>
+                </div>
+            </article>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <article class="event-card">
+                <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80" alt="Hotel breakfast table with pastries and fruit">
+                <div class="p-4">
+                    <span class="event-date mb-3"><i class="bi bi-cup-hot"></i> Weekend AM</span>
+                    <h3 class="h5">Chef's Breakfast Table</h3>
+                    <p class="text-muted mb-0">Fresh pastries, local honey, and made-to-order omelets in the restaurant.</p>
+                </div>
+            </article>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <article class="event-card">
+                <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt="Sunny garden terrace seating">
+                <div class="p-4">
+                    <span class="event-date mb-3"><i class="bi bi-flower1"></i> New for guests</span>
+                    <h3 class="h5">Garden Terrace Opens</h3>
+                    <p class="text-muted mb-0">A quiet outdoor corner for coffee, reading, and evening desserts.</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="experience-band landing-section reveal-on-scroll" aria-labelledby="pace-title">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-5">
+                <p class="text-uppercase small fw-semibold text-muted mb-2">More than a room key</p>
+                <h2 id="pace-title" class="display-6 fw-semibold">A stay that moves at your pace.</h2>
+            </div>
+            <div class="col-lg-7">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="experience-note">
+                            <h3 class="h5">Morning</h3>
+                            <p class="text-muted mb-0">Breakfast, gym access, and quick route advice before you leave.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="experience-note">
+                            <h3 class="h5">Afternoon</h3>
+                            <p class="text-muted mb-0">Pool time, terrace coffee, and room-ready updates for arrivals.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="experience-note">
+                            <h3 class="h5">Evening</h3>
+                            <p class="text-muted mb-0">Dining, room service, and quiet spaces for late work or travel resets.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="amenity-band landing-section reveal-on-scroll" aria-labelledby="amenities-title">
+    <div class="container">
+        <div class="mb-5 text-center">
+            <h2 id="amenities-title" class="h2">Everything Included For A Smoother Stay</h2>
+            <p class="text-muted mb-0">Comfortable essentials across the hotel, from arrival to checkout.</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-sm-6 col-lg-3">
+                <div class="amenity-item p-4">
+                    <div class="amenity-icon" aria-hidden="true"><i class="bi bi-wifi"></i></div>
+                    <h3 class="h5">Free WiFi</h3>
+                    <p class="text-muted mb-0">High-speed access in rooms, lobby, meeting spaces, and quiet corners for remote work.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="amenity-item p-4">
+                    <div class="amenity-icon" aria-hidden="true"><i class="bi bi-p-circle"></i></div>
+                    <h3 class="h5">Guest Parking</h3>
+                    <p class="text-muted mb-0">Convenient overnight parking close to the main entrance with easy luggage access.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="amenity-item p-4">
+                    <div class="amenity-icon" aria-hidden="true"><i class="bi bi-heart-pulse"></i></div>
+                    <h3 class="h5">Fitness Studio</h3>
+                    <p class="text-muted mb-0">Cardio, weights, fresh towels, and chilled water available throughout the day.</p>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="amenity-item p-4">
+                    <div class="amenity-icon" aria-hidden="true"><i class="bi bi-cup-hot"></i></div>
+                    <h3 class="h5">Pool And Dining</h3>
+                    <p class="text-muted mb-0">Pool access, breakfast service, restaurant dining, and relaxed room service.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>
 </html>
-

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <h1 class="h3 mb-4" th:text="${pageTitle}">Conversation</h1>
+        <form class="card p-4" th:object="${conversationForm}" method="post"
+              th:action="${conversationId == null} ? @{/admin/conversations} : @{/admin/conversations/{id}/edit(id=${conversationId})}">
+            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <label class="form-label" for="title">Title</label>
+                    <input id="title" th:field="*{title}" class="form-control">
+                    <div class="text-danger small" th:errors="*{title}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="category">Category</label>
+                    <select id="category" th:field="*{category}" class="form-select">
+                        <option th:each="category : ${categories}" th:value="${category}" th:text="${category}"></option>
+                    </select>
+                </div>
+            </div>
+            <div id="turns" class="d-grid gap-3">
+                <div class="border rounded p-3 turn-row" th:each="turn, iter : *{turns}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <select class="form-select form-select-sm w-auto role-input" th:field="*{turns[__${iter.index}__].role}">
+                            <option value="USER">USER</option>
+                            <option value="ASSISTANT">ASSISTANT</option>
+                        </select>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary move-up" type="button">Up</button>
+                            <button class="btn btn-outline-secondary move-down" type="button">Down</button>
+                            <button class="btn btn-outline-danger remove-turn" type="button">Delete</button>
+                        </div>
+                    </div>
+                    <textarea class="form-control content-input" rows="4" th:field="*{turns[__${iter.index}__].content}"></textarea>
+                    <div class="text-danger small" th:errors="*{turns[__${iter.index}__].content}"></div>
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-outline-primary" id="addUser" type="button">Add User Turn</button>
+                <button class="btn btn-outline-success" id="addAssistant" type="button">Add Assistant Turn</button>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Save</button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/conversations}">Cancel</a>
+            </div>
+        </form>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+<script>
+    const turns = document.getElementById('turns');
+    function row(role, content = '') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'border rounded p-3 turn-row';
+        wrapper.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-2">
+            <select class="form-select form-select-sm w-auto role-input">
+                <option value="USER">USER</option><option value="ASSISTANT">ASSISTANT</option>
+            </select>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary move-up" type="button">Up</button>
+                <button class="btn btn-outline-secondary move-down" type="button">Down</button>
+                <button class="btn btn-outline-danger remove-turn" type="button">Delete</button>
+            </div>
+        </div><textarea class="form-control content-input" rows="4"></textarea>`;
+        wrapper.querySelector('.role-input').value = role;
+        wrapper.querySelector('.content-input').value = content;
+        turns.appendChild(wrapper);
+        reindex();
+    }
+    function reindex() {
+        turns.querySelectorAll('.turn-row').forEach((item, index) => {
+            item.querySelector('.role-input').name = `turns[${index}].role`;
+            item.querySelector('.content-input').name = `turns[${index}].content`;
+        });
+    }
+    document.getElementById('addUser').addEventListener('click', () => row('USER'));
+    document.getElementById('addAssistant').addEventListener('click', () => row('ASSISTANT'));
+    turns.addEventListener('click', event => {
+        const rowNode = event.target.closest('.turn-row');
+        if (!rowNode) return;
+        if (event.target.classList.contains('remove-turn')) rowNode.remove();
+        if (event.target.classList.contains('move-up') && rowNode.previousElementSibling) turns.insertBefore(rowNode, rowNode.previousElementSibling);
+        if (event.target.classList.contains('move-down') && rowNode.nextElementSibling) turns.insertBefore(rowNode.nextElementSibling, rowNode);
+        reindex();
+    });
+    reindex();
+</script>
+</body>
+</html>

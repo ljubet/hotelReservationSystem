@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | Aurora Hotel'">Aurora Hotel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --hotel-gold: #b88935;
+            --hotel-ink: #22201c;
+            --hotel-cream: #f8f4ec;
+        }
+        body { background: #fffdf9; color: var(--hotel-ink); }
+        .skip-link {
+            position: absolute; left: 1rem; top: -4rem; z-index: 2000;
+            background: #fff; color: #111; padding: .6rem 1rem; border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.18);
+        }
+        .skip-link:focus { top: 1rem; }
+        :focus-visible { outline: 3px solid rgba(184, 137, 53, .55); outline-offset: 3px; }
+        .navbar-brand { font-weight: 700; letter-spacing: .02em; }
+        .btn-gold { background: var(--hotel-gold); border-color: var(--hotel-gold); color: #fff; }
+        .btn-gold:hover { background: #9f742b; border-color: #9f742b; color: #fff; }
+        .hero {
+            min-height: 72vh;
+            background: linear-gradient(rgba(25, 22, 18, .44), rgba(25, 22, 18, .32)),
+            url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1800&q=80') center/cover;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: "";
+            position: absolute; inset: auto -10% -35% -10%; height: 48%;
+            background: rgba(255,255,255,.14);
+            transform: rotate(-2deg);
+            animation: tide 9s ease-in-out infinite alternate;
+        }
+        .hero .container { position: relative; z-index: 1; animation: rise-in .75s ease-out both; }
+        .pulse-soft { animation: pulse-soft 2.6s ease-in-out infinite; }
+        .landing-section { padding-top: 5.5rem; padding-bottom: 5.5rem; }
+        .arrival-story {
+            border: 1px solid #eadfcd; border-radius: 8px; overflow: hidden; background: #fff;
+            box-shadow: 0 18px 44px rgba(62, 49, 30, .08);
+        }
+        .arrival-story img { width: 100%; height: 100%; min-height: 360px; object-fit: cover; }
+        .stat-tile {
+            border-top: 1px solid #eadfcd; padding-top: 1rem;
+        }
+        .stat-tile strong { display: block; font-size: 1.45rem; color: #9f742b; }
+        .guest-card {
+            border: 1px solid #eadfcd; border-radius: 8px; overflow: hidden;
+            transition: transform .22s ease, box-shadow .22s ease;
+        }
+        .guest-card:hover { transform: translateY(-4px); box-shadow: 0 18px 38px rgba(62, 49, 30, .12); }
+        .guest-card img { height: 220px; object-fit: cover; }
+        .room-strip {
+            display: flex; gap: 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory;
+            scrollbar-width: none; padding: .4rem .25rem 1.5rem; scroll-behavior: smooth;
+        }
+        .room-strip::-webkit-scrollbar { display: none; }
+        .room-slide { flex: 0 0 min(360px, 88vw); scroll-snap-align: start; }
+        .carousel-shell { position: relative; }
+        .round-control {
+            width: 42px; height: 42px; border-radius: 50%; display: inline-grid; place-items: center;
+        }
+        .carousel-edge-control {
+            position: absolute; top: 44%; z-index: 2; border: 0; background: #fff;
+            color: var(--hotel-ink);
+            box-shadow: 0 14px 34px rgba(62, 49, 30, .18);
+            transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+        }
+        .carousel-edge-control:hover,
+        .carousel-edge-control:focus-visible {
+            background: var(--hotel-gold);
+            color: #fff;
+            opacity: 1;
+            transform: scale(1.04);
+        }
+        .carousel-edge-control[data-scroll-direction="left"] { left: -1.25rem; }
+        .carousel-edge-control[data-scroll-direction="right"] { right: -1.25rem; }
+        .carousel-edge-control.is-hidden,
+        .carousel-mobile-controls .is-hidden {
+            opacity: 0; pointer-events: none; visibility: hidden; transform: scale(.92);
+        }
+        .event-card {
+            border: 1px solid #eadfcd; border-radius: 8px; background: #fff; height: 100%;
+            overflow: hidden;
+            transition: transform .22s ease, box-shadow .22s ease;
+        }
+        .event-card:hover { transform: translateY(-4px); box-shadow: 0 18px 34px rgba(95, 71, 38, .12); }
+        .event-card img { width: 100%; height: 230px; object-fit: cover; }
+        .event-card-feature img { height: 310px; }
+        .event-date {
+            display: inline-flex; align-items: center; gap: .4rem; color: #76541c; background: #fff8ec;
+            border: 1px solid #eadfcd; border-radius: 999px; padding: .35rem .65rem; font-size: .82rem;
+        }
+        .experience-band {
+            background: #1f1d1a; color: #fff;
+        }
+        .experience-band .text-muted { color: rgba(255,255,255,.72) !important; }
+        .experience-note {
+            border-left: 3px solid var(--hotel-gold); padding-left: 1rem;
+        }
+        .amenity-band {
+            background: linear-gradient(135deg, #f8f4ec 0%, #fffdf9 54%, #efe3cf 100%);
+            border-top: 1px solid #eadfcd; border-bottom: 1px solid #eadfcd;
+        }
+        .amenity-item {
+            background: rgba(255,255,255,.88); border: 1px solid #eadfcd; border-radius: 8px; height: 100%;
+            min-height: 210px; transition: transform .22s ease, box-shadow .22s ease;
+        }
+        .amenity-item:hover { transform: translateY(-5px); box-shadow: 0 18px 34px rgba(95, 71, 38, .13); }
+        .amenity-icon {
+            width: 54px; height: 54px; border-radius: 50%;
+            display: grid; place-items: center; color: #fff; background: var(--hotel-gold);
+            font-size: 1.45rem; margin-bottom: 1.1rem;
+        }
+        .room-rating { color: #9f742b; font-weight: 700; white-space: nowrap; }
+        .auth-page {
+            min-height: calc(100vh - 74px);
+            position: relative;
+            background: linear-gradient(rgba(34, 32, 28, .48), rgba(34, 32, 28, .36)),
+            url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=80') center/cover;
+            display: flex;
+            align-items: center;
+        }
+        .auth-panel {
+            background: rgba(255, 255, 255, .86);
+            border: 1px solid rgba(255, 255, 255, .72);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .2);
+        }
+        .chat-launcher {
+            position: fixed; right: 24px; bottom: 24px; z-index: 1050;
+            width: 58px; height: 58px; border-radius: 50%;
+            display: grid; place-items: center; box-shadow: 0 12px 28px rgba(0,0,0,.22);
+        }
+        body.chat-open .chat-launcher { display: none; }
+        .chat-launcher::after {
+            content: ""; position: absolute; inset: -7px; border-radius: 50%;
+            border: 2px solid rgba(184, 137, 53, .35); animation: ring 1.9s ease-out infinite;
+        }
+        .chat-offcanvas .offcanvas-body { height: calc(100vh - 73px); }
+        .chat-thread { flex: 1 1 auto; min-height: 0; height: auto; overflow-y: auto; background: #f8f9fa; }
+        .bubble { max-width: 82%; padding: .65rem .85rem; border-radius: 1rem; margin-bottom: .55rem; }
+        .bubble-user { margin-left: auto; background: #0d6efd; color: #fff; border-bottom-right-radius: .25rem; }
+        .bubble-bot { background: #fff; border: 1px solid #dee2e6; border-bottom-left-radius: .25rem; }
+        .quick-question {
+            border-color: #eadfcd; background: #fff; color: #5e4520; border-radius: 999px;
+            padding: .35rem .65rem; font-size: .84rem;
+        }
+        .quick-question:hover { border-color: var(--hotel-gold); background: #fff8ec; }
+        .site-footer { margin-top: 0; padding: 1rem 0; }
+        .footer-social a {
+            width: 34px; height: 34px; display: inline-grid; place-items: center;
+            color: #5e4520; border: 1px solid #eadfcd; border-radius: 50%; text-decoration: none;
+        }
+        .footer-social a:hover { background: var(--hotel-gold); color: #fff; }
+        .reservation-hero {
+            background: linear-gradient(135deg, #fff 0%, #f8f4ec 100%);
+            border: 1px solid #eadfcd; border-radius: 8px;
+        }
+        .reservation-card {
+            border: 1px solid #eadfcd; border-radius: 8px; background: #fff; overflow: hidden;
+            box-shadow: 0 12px 28px rgba(62, 49, 30, .08);
+        }
+        .reservation-thumb { height: 100%; min-height: 190px; object-fit: cover; }
+        .reveal-on-scroll {
+            opacity: 0; transform: translateY(28px);
+            transition: opacity .7s ease, transform .7s ease;
+        }
+        .reveal-on-scroll.is-visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .admin-shell { min-height: 100vh; background: #f4f6f8; }
+        .admin-sidebar { width: 260px; background: #161a23; color: #fff; }
+        .admin-sidebar a { color: #ced4da; text-decoration: none; display: block; padding: .7rem 1rem; border-radius: .4rem; }
+        .admin-sidebar a:hover { background: #2a3040; color: #fff; }
+        @media (max-width: 767.98px) {
+            .hero { min-height: 56vh; }
+            .landing-section { padding-top: 3.5rem; padding-bottom: 3.5rem; }
+            .auth-page { min-height: auto; padding-top: 3rem; padding-bottom: 3rem; }
+            .admin-sidebar { width: 100%; }
+            .admin-shell { display: block !important; }
+            .carousel-edge-control { position: static; margin-bottom: 1rem; }
+            .carousel-mobile-controls { display: flex !important; }
+            .carousel-desktop-control { display: none !important; }
+        }
+        @media (min-width: 768px) {
+            .carousel-mobile-controls { display: none !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition: none !important;
+            }
+            .reveal-on-scroll { opacity: 1; transform: none; }
+        }
+        @keyframes rise-in {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes tide {
+            from { transform: rotate(-2deg) translateY(0); }
+            to { transform: rotate(1deg) translateY(-18px); }
+        }
+        @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.025); }
+        }
+        @keyframes ring {
+            from { opacity: .8; transform: scale(.9); }
+            to { opacity: 0; transform: scale(1.25); }
+        }
+    </style>
+</head>
+<body>
+<nav th:fragment="guestNav" class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">Aurora Hotel</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#guestNavbar" aria-controls="guestNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="guestNavbar" class="collapse navbar-collapse">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/rooms}">Rooms</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/reservations/my}">My Reservations</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/dashboard}">Admin</a></li>
+            </ul>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="small text-muted" sec:authorize="isAuthenticated()" sec:authentication="name"></span>
+                <a class="btn btn-outline-dark btn-sm" sec:authorize="isAnonymous()" th:href="@{/login}">Login</a>
+                <a class="btn btn-gold btn-sm" sec:authorize="isAnonymous()" th:href="@{/register}">Register</a>
+                <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+                    <button class="btn btn-outline-dark btn-sm" type="submit">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div th:fragment="alerts" th:if="${success != null or error != null}" class="container mt-3">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
+<footer th:fragment="footer" class="site-footer border-top bg-white">
+    <div class="container d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center small text-muted">
+        <div>
+            <strong class="d-block text-dark">Aurora Hotel</strong>
+            <span>Reservations, guest support, and hotel operations in one place.</span>
+        </div>
+        <div class="footer-social d-flex gap-2" aria-label="Social media links">
+            <a href="https://www.instagram.com/" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="https://www.facebook.com/" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="https://www.linkedin.com/" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+            <a href="https://www.youtube.com/" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+        </div>
+    </div>
+</footer>
+
+<div th:fragment="chatWidget">
+    <button id="chatLauncher" class="btn btn-gold chat-launcher" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatCanvas" aria-label="Open chat">
+        <span>Chat</span>
+    </button>
+    <div class="offcanvas offcanvas-end chat-offcanvas" tabindex="-1" id="chatCanvas" aria-labelledby="chatCanvasTitle">
+        <div class="offcanvas-header">
+            <h5 id="chatCanvasTitle" class="offcanvas-title">Hotel Chat</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close chat"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column gap-3 pb-4">
+            <div class="row g-2">
+                <div class="col-6"><label class="visually-hidden" for="chatName">Name</label><input id="chatName" class="form-control" placeholder="Name" sec:authorize="isAnonymous()"></div>
+                <div class="col-6"><label class="visually-hidden" for="chatEmail">Email</label><input id="chatEmail" class="form-control" placeholder="Email" th:value="${currentUserEmail}"></div>
+            </div>
+            <div>
+                <div class="small text-muted mb-2">Quick questions</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn quick-question" data-question="What time is breakfast?">Breakfast?</button>
+                    <button type="button" class="btn quick-question" data-question="Is parking available?">Parking?</button>
+                    <button type="button" class="btn quick-question" data-question="Can I bring a small dog?">Pets?</button>
+                    <button type="button" class="btn quick-question" data-question="Do rooms have internet?">WiFi?</button>
+                    <button type="button" class="btn quick-question" data-question="Can I check out late?">Late checkout?</button>
+                </div>
+            </div>
+            <div id="chatThread" class="chat-thread rounded p-3" role="log" aria-live="polite" aria-label="Chat messages"></div>
+            <form id="chatForm" class="d-flex gap-2">
+                <label class="visually-hidden" for="chatQuestion">Ask a question</label>
+                <input id="chatQuestion" class="form-control" placeholder="Ask a question" required>
+                <button class="btn btn-gold" type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        const thread = document.getElementById('chatThread');
+        const emailInput = document.getElementById('chatEmail');
+        const nameInput = document.getElementById('chatName');
+        function bubble(text, own) {
+            const node = document.createElement('div');
+            node.className = 'bubble ' + (own ? 'bubble-user' : 'bubble-bot');
+            node.textContent = text;
+            thread.appendChild(node);
+            thread.scrollTop = thread.scrollHeight;
+        }
+        async function sendQuestion(question) {
+            const email = emailInput.value.trim();
+            const name = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Guest';
+            if (!question || !email) return;
+            bubble(question, true);
+            document.getElementById('chatQuestion').value = '';
+            const response = await fetch('/chat/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({senderName: name, senderEmail: email, question})
+            });
+            const payload = await response.json();
+            bubble(payload.answer, false);
+        }
+        async function loadMessages() {
+            if (!emailInput || !emailInput.value) return;
+            const response = await fetch('/chat/messages?email=' + encodeURIComponent(emailInput.value));
+            if (!response.ok) return;
+            const messages = await response.json();
+            thread.innerHTML = '';
+            messages.forEach(message => {
+                bubble(message.question, true);
+                if (message.answer) bubble(message.answer, false);
+            });
+        }
+        document.getElementById('chatForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const question = document.getElementById('chatQuestion').value.trim();
+            await sendQuestion(question);
+        });
+        document.querySelectorAll('.quick-question').forEach(button => {
+            button.addEventListener('click', () => sendQuestion(button.dataset.question));
+        });
+        if (emailInput) {
+            emailInput.addEventListener('change', loadMessages);
+            loadMessages();
+        }
+        const chatCanvas = document.getElementById('chatCanvas');
+        if (chatCanvas) {
+            chatCanvas.addEventListener('show.bs.offcanvas', () => document.body.classList.add('chat-open'));
+            chatCanvas.addEventListener('hidden.bs.offcanvas', () => document.body.classList.remove('chat-open'));
+        }
+    </script>
+</div>
+
+<div th:fragment="adminSidebar" class="admin-sidebar p-3">
+    <h5 class="mb-4">Aurora Admin</h5>
+    <nav class="d-grid gap-1">
+        <a th:href="@{/admin/dashboard}">Dashboard</a>
+        <a th:href="@{/admin/rooms}">Rooms</a>
+        <a th:href="@{/admin/reservations}">Reservations</a>
+        <a th:href="@{/admin/chat}">Chat Inbox</a>
+        <a th:href="@{/admin/conversations}">Conversations</a>
+        <a th:href="@{/admin/export}">Export</a>
+        <a th:href="@{/}">Guest Site</a>
+    </nav>
+    <form th:action="@{/logout}" method="post" class="mt-4">
+        <button class="btn btn-outline-light btn-sm w-100" type="submit">Logout</button>
+    </form>
+</div>
+
+<th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateCarouselControls(target) {
+            const maxScroll = Math.max(0, target.scrollWidth - target.clientWidth);
+            const buttons = document.querySelectorAll(`[data-scroll-target="#${target.id}"]`);
+            buttons.forEach(button => {
+                const isLeft = button.dataset.scrollDirection === 'left';
+                const shouldHide = isLeft ? target.scrollLeft <= 4 : target.scrollLeft >= maxScroll - 4;
+                button.classList.toggle('is-hidden', shouldHide || maxScroll <= 4);
+                button.setAttribute('aria-hidden', String(shouldHide || maxScroll <= 4));
+                button.tabIndex = shouldHide || maxScroll <= 4 ? -1 : 0;
+            });
+        }
+        document.querySelectorAll('.room-strip').forEach(target => {
+            updateCarouselControls(target);
+            target.addEventListener('scroll', () => updateCarouselControls(target), {passive: true});
+        });
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.room-strip').forEach(updateCarouselControls);
+        });
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.room-strip').forEach(updateCarouselControls);
+        });
+        document.querySelectorAll('[data-scroll-target]').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = document.querySelector(button.dataset.scrollTarget);
+                if (!target) return;
+                const direction = button.dataset.scrollDirection === 'left' ? -1 : 1;
+                const card = target.querySelector('.room-slide');
+                const distance = card ? card.getBoundingClientRect().width + 24 : 390;
+                target.scrollBy({left: direction * distance, behavior: 'smooth'});
+                window.setTimeout(() => updateCarouselControls(target), 260);
+            });
+        });
+        const revealItems = document.querySelectorAll('.reveal-on-scroll');
+        if (revealItems.length && 'IntersectionObserver' in window) {
+            const revealObserver = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, {threshold: 0.15});
+            revealItems.forEach(item => revealObserver.observe(item));
+        } else {
+            revealItems.forEach(item => item.classList.add('is-visible'));
+        }
+    </script>
+</th:block>
+</body>
+</html>

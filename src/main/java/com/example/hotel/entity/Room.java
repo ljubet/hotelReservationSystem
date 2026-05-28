@@ -4,14 +4,24 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.math.BigDecimal;
+
+@Getter
+@Setter
 @Entity
 @Table(name = "rooms")
 public class Room {
@@ -20,70 +30,66 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false)
-    private String roomNumber;
+    private String name;
 
-    @Column(nullable = false)
-    private Integer floor;
+    @NotBlank
+    @Column(nullable = false, length = 2000)
+    private String description;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RoomStatus status;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "hotel_id", nullable = false)
-    private Hotel hotel;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "room_type_id", nullable = false)
     private RoomType roomType;
 
-    public Long getId() {
-        return id;
+    @NotNull
+    @DecimalMin("1.00")
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal pricePerNight;
+
+    @DecimalMin("1.0")
+    @DecimalMax("5.0")
+    @Column(precision = 2, scale = 1)
+    private BigDecimal rating = new BigDecimal("4.7");
+
+    @NotNull
+    @Min(1)
+    @Column(nullable = false)
+    private Integer capacity;
+
+    @Column(length = 1000)
+    private String imageUrl;
+
+    @Column(nullable = false)
+    private boolean available = true;
+
+    @Column(nullable = false)
+    private boolean underRenovation = false;
+
+    @Column(length = 1000)
+    private String amenities;
+
+    public boolean isBookable() {
+        return available && !underRenovation;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setUnderRenovation(boolean underRenovation) {
+        this.underRenovation = underRenovation;
+        if (underRenovation) {
+            this.available = false;
+        }
     }
 
-    public String getRoomNumber() {
-        return roomNumber;
-    }
-
-    public void setRoomNumber(String roomNumber) {
-        this.roomNumber = roomNumber;
-    }
-
-    public Integer getFloor() {
-        return floor;
-    }
-
-    public void setFloor(Integer floor) {
-        this.floor = floor;
-    }
-
-    public RoomStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(RoomStatus status) {
-        this.status = status;
-    }
-
-    public Hotel getHotel() {
-        return hotel;
-    }
-
-    public void setHotel(Hotel hotel) {
-        this.hotel = hotel;
-    }
-
-    public RoomType getRoomType() {
-        return roomType;
-    }
-
-    public void setRoomType(RoomType roomType) {
-        this.roomType = roomType;
+    @PrePersist
+    @PreUpdate
+    void normalizeAvailability() {
+        if (underRenovation) {
+            available = false;
+        }
+        if (rating == null) {
+            rating = new BigDecimal("4.7");
+        }
     }
 }
 

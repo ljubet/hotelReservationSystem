@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${conversation.title})}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1" th:text="${conversation.title}">Conversation</h1>
+                <div class="text-muted" th:text="${conversation.category + ' / ' + conversation.status}">Meta</div>
+            </div>
+            <a class="btn btn-primary" th:href="@{/admin/conversations/{id}/edit(id=${conversation.id})}">Edit</a>
+        </div>
+        <div class="card p-4">
+            <div th:each="turn : ${conversation.turns}" class="mb-3">
+                <span class="badge" th:classappend="${turn.role.name() == 'USER'} ? ' text-bg-primary' : ' text-bg-success'" th:text="${turn.role}">USER</span>
+                <p class="mb-0 mt-2" th:text="${turn.content}">Content</p>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>
