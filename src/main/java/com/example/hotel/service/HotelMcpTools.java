@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -49,6 +50,14 @@ public class HotelMcpTools {
                     .append('\n');
         }
         return builder.toString();
+    }
+
+    @Tool(description = "Returns the exact total room count and currently bookable room count from the database.")
+    public String getRoomCount() {
+        long totalRooms = roomRepository.count();
+        long bookableRooms = roomRepository.findAll().stream().filter(Room::isBookable).count();
+        return "Aurora Hotel has " + totalRooms + " rooms in the database, and "
+                + bookableRooms + " are currently bookable.";
     }
 
     @Tool(description = "Returns full details for a room by room name, including amenities and booking status.")
@@ -135,6 +144,85 @@ public class HotelMcpTools {
         return builder.toString();
     }
 
+    @Tool(description = "Calculates the estimated reservation price for a room name or room type and ISO dates.")
+    public String calculateReservationPrice(
+            @ToolParam(description = "Room name or room type such as SINGLE, DOUBLE, or SUITE") String roomNameOrType,
+            @ToolParam(description = "Check-in date in ISO format, for example 2026-06-10") String checkIn,
+            @ToolParam(description = "Check-out date in ISO format, for example 2026-06-12") String checkOut) {
+        LocalDate parsedCheckIn;
+        LocalDate parsedCheckOut;
+        try {
+            parsedCheckIn = LocalDate.parse(checkIn);
+            parsedCheckOut = LocalDate.parse(checkOut);
+        } catch (DateTimeParseException | NullPointerException ex) {
+            return "Please provide dates in YYYY-MM-DD format.";
+        }
+        if (!parsedCheckOut.isAfter(parsedCheckIn)) {
+            return "Check-out must be after check-in.";
+        }
+        Optional<Room> room = findRoomForPrice(roomNameOrType, parsedCheckIn, parsedCheckOut);
+        if (room.isEmpty()) {
+            return "No available matching room was found for those dates.";
+        }
+        long nights = ChronoUnit.DAYS.between(parsedCheckIn, parsedCheckOut);
+        return """
+                Price estimate:
+                Room: %s
+                Dates: %s to %s
+                Nights: %d
+                Price per night: $%s
+                Estimated total: $%s
+                """.formatted(
+                room.get().getName(),
+                parsedCheckIn,
+                parsedCheckOut,
+                nights,
+                room.get().getPricePerNight(),
+                room.get().getPricePerNight().multiply(java.math.BigDecimal.valueOf(nights)));
+    }
+
+    @Tool(description = "Recommends bookable rooms by maximum nightly budget, guest capacity, and optional room type.")
+    public String recommendRooms(
+            @ToolParam(description = "Maximum nightly budget in USD") double maxBudget,
+            @ToolParam(description = "Minimum guest capacity") int minCapacity,
+            @ToolParam(description = "Optional room type: SINGLE, DOUBLE, SUITE, or blank") String roomType) {
+        RoomType parsedType = null;
+        if (roomType != null && !roomType.isBlank()) {
+            try {
+                parsedType = RoomType.valueOf(roomType.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                return "Room type must be SINGLE, DOUBLE, SUITE, or blank.";
+            }
+        }
+        RoomType finalParsedType = parsedType;
+        List<Room> matches = roomRepository.findAll().stream()
+                .filter(Room::isBookable)
+                .filter(room -> finalParsedType == null || room.getRoomType() == finalParsedType)
+                .filter(room -> room.getPricePerNight().compareTo(java.math.BigDecimal.valueOf(maxBudget)) <= 0)
+                .filter(room -> room.getCapacity() >= minCapacity)
+                .sorted(Comparator.comparing(Room::getRating).reversed().thenComparing(Room::getPricePerNight))
+                .limit(5)
+                .toList();
+        if (matches.isEmpty()) {
+            return "No matching rooms were found for that budget and capacity.";
+        }
+        StringBuilder builder = new StringBuilder("Recommended rooms:\n");
+        for (Room room : matches) {
+            builder.append("- ")
+                    .append(room.getName())
+                    .append(" (")
+                    .append(room.getRoomType())
+                    .append("): $")
+                    .append(room.getPricePerNight())
+                    .append(" per night, capacity ")
+                    .append(room.getCapacity())
+                    .append(", rating ")
+                    .append(room.getRating())
+                    .append("/5\n");
+        }
+        return builder.toString();
+    }
+
     @Tool(description = "Returns Aurora Hotel policies, address, check-in, check-out, parking, pool, WiFi, pets, and cancellation information.")
     public String getHotelInfo() {
         return """
@@ -164,6 +252,9 @@ public class HotelMcpTools {
         StringBuilder builder = new StringBuilder("Reservations for ").append(email).append(":\n");
         for (Reservation reservation : reservations) {
             builder.append("- ")
+                    .append("#")
+                    .append(reservation.getId())
+                    .append(" ")
                     .append(reservation.getRoom().getName())
                     .append(": ")
                     .append(reservation.getStatus())
@@ -180,5 +271,31 @@ public class HotelMcpTools {
 
     private String blankToDefault(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private Optional<Room> findRoomForPrice(String roomNameOrType, LocalDate checkIn, LocalDate checkOut) {
+        if (roomNameOrType == null || roomNameOrType.isBlank()) {
+            return Optional.empty();
+        }
+        String requested = roomNameOrType.trim();
+        Optional<Room> byName = roomRepository.findAll().stream()
+                .filter(Room::isBookable)
+                .filter(room -> room.getName().equalsIgnoreCase(requested)
+                        || room.getName().toLowerCase(Locale.ROOT).contains(requested.toLowerCase(Locale.ROOT)))
+                .filter(room -> !reservationRepository.existsActiveOverlap(room.getId(), checkIn, checkOut))
+                .min(Comparator.comparing(Room::getPricePerNight));
+        if (byName.isPresent()) {
+            return byName;
+        }
+        try {
+            RoomType roomType = RoomType.valueOf(requested.toUpperCase(Locale.ROOT));
+            return roomRepository.findAll().stream()
+                    .filter(Room::isBookable)
+                    .filter(room -> room.getRoomType() == roomType)
+                    .filter(room -> !reservationRepository.existsActiveOverlap(room.getId(), checkIn, checkOut))
+                    .min(Comparator.comparing(Room::getPricePerNight));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 }

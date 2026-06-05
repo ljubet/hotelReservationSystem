@@ -43,7 +43,7 @@ public class AuthController {
         if (userRepository.existsByUsername(registerForm.getUsername())) {
             bindingResult.rejectValue("username", "duplicate", "Username is already taken.");
         }
-        if (userRepository.existsByEmail(registerForm.getEmail())) {
+        if (userRepository.findByEmailIgnoreCase(registerForm.getEmail()).isPresent()) {
             bindingResult.rejectValue("email", "duplicate", "Email is already registered.");
         }
         if (bindingResult.hasErrors()) {
@@ -51,6 +51,7 @@ public class AuthController {
         }
         User user = new User();
         user.setUsername(registerForm.getUsername());
+        user.setFullName(registerForm.getUsername());
         user.setEmail(registerForm.getEmail());
         user.setPassword(passwordEncoder.encode(registerForm.getPassword()));
         user.setRole(UserRole.GUEST);

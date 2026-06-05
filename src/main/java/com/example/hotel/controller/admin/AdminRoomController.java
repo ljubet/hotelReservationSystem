@@ -1,5 +1,6 @@
 package com.example.hotel.controller.admin;
 
+import com.example.hotel.entity.HousekeepingStatus;
 import com.example.hotel.entity.Room;
 import com.example.hotel.entity.RoomType;
 import com.example.hotel.form.RoomForm;
@@ -27,6 +28,11 @@ public class AdminRoomController {
     @ModelAttribute("roomTypes")
     RoomType[] roomTypes() {
         return RoomType.values();
+    }
+
+    @ModelAttribute("housekeepingStatuses")
+    HousekeepingStatus[] housekeepingStatuses() {
+        return HousekeepingStatus.values();
     }
 
     @GetMapping("/admin/rooms")
@@ -111,6 +117,7 @@ public class AdminRoomController {
         room.setImageUrl(form.getImageUrl());
         room.setUnderRenovation(form.isUnderRenovation());
         room.setAvailable(!form.isUnderRenovation() && form.isAvailable());
+        room.setHousekeepingStatus(form.getHousekeepingStatus());
         room.setAmenities(form.getAmenities());
         return room;
     }
@@ -126,6 +133,7 @@ public class AdminRoomController {
         form.setImageUrl(room.getImageUrl());
         form.setAvailable(room.isAvailable());
         form.setUnderRenovation(room.isUnderRenovation());
+        form.setHousekeepingStatus(room.getHousekeepingStatus());
         form.setAmenities(room.getAmenities());
         return form;
     }

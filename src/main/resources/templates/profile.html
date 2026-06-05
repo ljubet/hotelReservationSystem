@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Profile')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: guestNav}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+<main id="main-content" class="container py-5">
+    <div class="reservation-hero p-4 p-lg-5 mb-4">
+        <p class="text-uppercase small fw-semibold text-muted mb-2">Guest profile</p>
+        <h1 class="h2 mb-2" th:text="${user.fullName != null && !#strings.isEmpty(user.fullName) ? user.fullName : user.username}">guest</h1>
+        <p class="mb-0 text-muted" th:text="${user.email}">guest@example.com</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <form class="reservation-card p-4" th:action="@{/profile}" method="post">
+                <h2 class="h4 mb-3">Profile Information</h2>
+                <div class="mb-3">
+                    <label class="form-label" for="fullName">Full name</label>
+                    <input id="fullName" name="fullName" class="form-control"
+                           th:value="${user.fullName != null && !#strings.isEmpty(user.fullName) ? user.fullName : user.username}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="email">Email</label>
+                    <input id="email" name="email" type="email" class="form-control" th:value="${user.email}" required>
+                </div>
+                <label class="form-label" for="preferences">Stay preferences</label>
+                <textarea id="preferences" name="preferences" rows="8" class="form-control"
+                          placeholder="Quiet room, late arrival, pet-friendly room, high floor..."
+                          th:text="${user.preferences}"></textarea>
+                <button class="btn btn-gold mt-3" type="submit">Save Profile</button>
+            </form>
+        </div>
+        <div class="col-lg-7">
+            <div class="reservation-card p-4 mb-4">
+                <h2 class="h4">Past And Current Reservations</h2>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Room</th><th>Dates</th><th>Status</th></tr></thead>
+                        <tbody>
+                        <tr th:each="reservation : ${reservations}">
+                            <td th:text="${reservation.room.name}">Room</td>
+                            <td th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</td>
+                            <td><span class="badge"
+                                      th:classappend="${reservation.status.name() == 'CONFIRMED'} ? ' text-bg-success' : (${reservation.status.name() == 'CANCELLED'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                      th:text="${reservation.status}">PENDING</span></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(reservations)}"><td colspan="3" class="text-muted">No reservations yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="reservation-card p-4">
+                <div class="d-flex justify-content-between gap-3 align-items-center mb-3">
+                    <h2 class="h4 mb-0">Favorite Rooms</h2>
+                    <a class="btn btn-outline-dark btn-sm" th:href="@{/rooms}">Browse Rooms</a>
+                </div>
+                <div class="d-grid gap-2">
+                    <a th:each="favorite : ${favorites}" class="profile-favorite-link" th:href="@{/rooms/{id}(id=${favorite.room.id})}">
+                        <span th:text="${favorite.room.name}">Room</span>
+                        <span class="small text-muted" th:text="${'$' + favorite.room.pricePerNight + ' / night'}">$169 / night</span>
+                    </a>
+                    <span th:if="${#lists.isEmpty(favorites)}" class="text-muted">No favorite rooms yet.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/layout :: chatWidget}"></div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Reservation Calendar')}"></head>
+<body>
+<div class="admin-shell d-md-flex">
+    <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
+    <main class="flex-grow-1 p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Reservation Calendar</h1>
+                <p class="text-muted mb-0">Reservations grouped by stay date.</p>
+            </div>
+            <form class="d-flex gap-2" method="get" th:action="@{/admin/calendar}">
+                <input name="from" type="date" class="form-control" th:value="${from}">
+                <input name="to" type="date" class="form-control" th:value="${to}">
+                <button class="btn btn-primary" type="submit">View</button>
+            </form>
+        </div>
+        <div class="admin-calendar-grid">
+            <div th:each="day : ${days}">
+                <button type="button"
+                        class="admin-calendar-day"
+                        th:classappend="${#lists.isEmpty(day.reservations())} ? ' is-empty' : ' has-stays'"
+                        data-bs-toggle="modal"
+                        th:attr="data-bs-target=|#calendarDay${#temporals.format(day.date(), 'yyyyMMdd')}|,aria-label=|Open reservations for ${#temporals.format(day.date(), 'MMMM d')}|">
+                    <span class="admin-calendar-weekday" th:text="${#temporals.format(day.date(), 'EEE')}">Mon</span>
+                    <span class="admin-calendar-date" th:text="${#temporals.format(day.date(), 'd')}">8</span>
+                    <span class="admin-calendar-month" th:text="${#temporals.format(day.date(), 'MMM yyyy')}">Jun 2026</span>
+                    <span class="badge mt-auto"
+                          th:classappend="${#lists.isEmpty(day.reservations())} ? ' text-bg-secondary' : ' text-bg-primary'"
+                          th:text="${#lists.size(day.reservations()) + ' stay(s)'}">0 stays</span>
+                </button>
+
+                <div class="modal fade"
+                     th:id="|calendarDay${#temporals.format(day.date(), 'yyyyMMdd')}|"
+                     tabindex="-1"
+                     th:attr="aria-labelledby=|calendarTitle${#temporals.format(day.date(), 'yyyyMMdd')}|"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div>
+                                    <p class="text-uppercase small fw-semibold text-muted mb-1">Reservation date</p>
+                                    <h2 class="modal-title h5"
+                                        th:id="|calendarTitle${#temporals.format(day.date(), 'yyyyMMdd')}|"
+                                        th:text="${#temporals.format(day.date(), 'EEEE, MMMM d, yyyy')}">Monday, June 8, 2026</h2>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="list-group" th:if="${!#lists.isEmpty(day.reservations())}">
+                                    <a th:each="reservation : ${day.reservations()}"
+                                       class="list-group-item list-group-item-action"
+                                       th:href="@{/admin/reservations/{id}(id=${reservation.id})}">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <strong th:text="${reservation.room.name}">Room</strong>
+                                            <span class="badge"
+                                                  th:classappend="${reservation.status.name() == 'CONFIRMED'} ? ' text-bg-success' : (${reservation.status.name() == 'CANCELLED'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                                  th:text="${reservation.status}">PENDING</span>
+                                        </div>
+                                        <span class="d-block small text-muted" th:text="${reservation.guestName + ' / ' + reservation.guestEmail}">Guest</span>
+                                        <span class="d-block small text-muted" th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</span>
+                                    </a>
+                                </div>
+                                <p th:if="${#lists.isEmpty(day.reservations())}" class="text-muted mb-0">No reservations for this date.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

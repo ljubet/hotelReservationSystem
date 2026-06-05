@@ -4,6 +4,7 @@ import com.example.hotel.entity.Reservation;
 import com.example.hotel.entity.ReservationStatus;
 import com.example.hotel.entity.Room;
 import com.example.hotel.entity.User;
+import com.example.hotel.entity.PaymentOption;
 import com.example.hotel.form.AdminReservationForm;
 import com.example.hotel.form.ReservationForm;
 import com.example.hotel.repository.ReservationRepository;
@@ -44,6 +45,8 @@ public class ReservationService {
         reservation.setCheckOut(form.getCheckOut());
         reservation.setGuestName(form.getGuestName());
         reservation.setGuestEmail(form.getGuestEmail());
+        reservation.setPaymentOption(PaymentOption.PAY_AT_HOTEL);
+        reservation.setSimulatedPaid(false);
         reservation.setTotalPrice(room.getPricePerNight().multiply(BigDecimal.valueOf(nights)));
         if (username != null) {
             User user = userRepository.findByUsername(username).orElse(null);
@@ -67,6 +70,8 @@ public class ReservationService {
         reservation.setCheckOut(form.getCheckOut());
         reservation.setGuestName(form.getGuestName());
         reservation.setGuestEmail(form.getGuestEmail());
+        reservation.setPaymentOption(PaymentOption.PAY_AT_HOTEL);
+        reservation.setSimulatedPaid(false);
         reservation.setTotalPrice(room.getPricePerNight().multiply(BigDecimal.valueOf(nights)));
         reservation.setStatus(ReservationStatus.PENDING);
         return reservationRepository.save(reservation);
@@ -89,8 +94,29 @@ public class ReservationService {
         reservation.setGuestName(form.getGuestName());
         reservation.setGuestEmail(form.getGuestEmail());
         reservation.setStatus(form.getStatus());
+        reservation.setPaymentOption(PaymentOption.PAY_AT_HOTEL);
+        reservation.setSimulatedPaid(false);
         reservation.setStaffNote(form.getStaffNote());
         reservation.setTotalPrice(room.getPricePerNight().multiply(BigDecimal.valueOf(nights)));
+        return reservationRepository.save(reservation);
+    }
+
+    public Reservation confirm(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
+        validateRoomBookable(reservation.getRoom());
+        validateNoOverlap(reservation.getRoom().getId(), reservation.getId(), reservation.getCheckIn(), reservation.getCheckOut());
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        return reservationRepository.save(reservation);
+    }
+
+    public Reservation cancelGuestReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
+        if (reservation.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalArgumentException("Only pending reservations can be cancelled by guests.");
+        }
+        reservation.setStatus(ReservationStatus.CANCELLED);
         return reservationRepository.save(reservation);
     }
 
@@ -101,6 +127,7 @@ public class ReservationService {
         form.setCheckOut(reservation.getCheckOut());
         form.setGuestName(reservation.getGuestName());
         form.setGuestEmail(reservation.getGuestEmail());
+        form.setPaymentOption(PaymentOption.PAY_AT_HOTEL);
         return form;
     }
 
@@ -112,6 +139,7 @@ public class ReservationService {
         form.setGuestName(reservation.getGuestName());
         form.setGuestEmail(reservation.getGuestEmail());
         form.setStatus(reservation.getStatus());
+        form.setPaymentOption(PaymentOption.PAY_AT_HOTEL);
         form.setStaffNote(reservation.getStaffNote());
         return form;
     }

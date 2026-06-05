@@ -18,19 +18,26 @@ public class ChatbotService {
 
     private final ChatClient chatClient;
     private final HotelMcpTools hotelMcpTools;
+    private final ChatActionService chatActionService;
     private final String systemPrompt;
     private final AtomicBoolean toolCallingDisabled = new AtomicBoolean(false);
 
     public ChatbotService(ChatClient.Builder chatClientBuilder,
                           HotelMcpTools hotelMcpTools,
+                          ChatActionService chatActionService,
                           @Value("${hotel.chatbot.system-prompt}") String systemPrompt) {
         this.chatClient = chatClientBuilder.build();
         this.hotelMcpTools = hotelMcpTools;
+        this.chatActionService = chatActionService;
         this.systemPrompt = systemPrompt;
     }
 
-    public String getReply(String question, String guestEmail) {
+    public String getReply(String question, String guestEmail, String guestName) {
         String email = blankToUnknown(guestEmail);
+        String actionReply = chatActionService.handle(question, guestName, guestEmail).orElse(null);
+        if (actionReply != null) {
+            return actionReply;
+        }
         if (toolCallingDisabled.get()) {
             return getReplyWithInlineContext(question, email);
         }
@@ -69,10 +76,13 @@ public class ChatbotService {
 
                             %s
 
+                            %s
+
                             Guest email: %s
                             Guest question: %s
                             """.formatted(
                             hotelMcpTools.getHotelInfo(),
+                            hotelMcpTools.getRoomCount(),
                             hotelMcpTools.getRoomList(),
                             reservationContext(guestEmail),
                             guestEmail,

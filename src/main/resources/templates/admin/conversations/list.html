@@ -35,7 +35,11 @@
                     <tr th:each="conversation : ${conversations}">
                         <td th:text="${conversation.title}">Title</td>
                         <td th:text="${conversation.category}">GENERAL</td>
-                        <td><span class="badge text-bg-secondary" th:text="${conversation.status}">DRAFT</span></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${conversation.status.name() == 'APPROVED'} ? ' text-bg-success' : ' text-bg-warning'"
+                                  th:text="${conversation.status}">DRAFT</span>
+                        </td>
                         <td th:text="${#lists.size(conversation.turns)}">2</td>
                         <td th:text="${#temporals.format(conversation.createdAt, 'yyyy-MM-dd')}">Date</td>
                         <td class="d-flex flex-wrap gap-2">

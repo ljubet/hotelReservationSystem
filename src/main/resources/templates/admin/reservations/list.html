@@ -21,14 +21,19 @@
         <div class="card p-3">
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead><tr><th>Guest</th><th>Room</th><th>Dates</th><th>Total</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+                    <thead><tr><th>Guest</th><th>Room</th><th>Dates</th><th>Total</th><th>Payment</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
                     <tbody>
                     <tr th:each="reservation : ${reservations}">
                         <td><a th:href="@{/admin/reservations/{id}(id=${reservation.id})}" th:text="${reservation.guestName}">Guest</a></td>
                         <td th:text="${reservation.room.name}">Room</td>
                         <td th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</td>
                         <td th:text="${'$' + reservation.totalPrice}">$338</td>
-                        <td><span class="badge text-bg-secondary" th:text="${reservation.status}">PENDING</span></td>
+                        <td>At hotel</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${reservation.status.name() == 'CONFIRMED'} ? ' text-bg-success' : (${reservation.status.name() == 'CANCELLED'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                  th:text="${reservation.status}">PENDING</span>
+                        </td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/reservations/{id}/edit(id=${reservation.id})}">Edit</a>
                         </td>

@@ -1,5 +1,6 @@
 package com.example.hotel.form;
 
+import com.example.hotel.entity.HousekeepingStatus;
 import com.example.hotel.entity.RoomType;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -41,6 +42,9 @@ public class RoomForm {
     private boolean available = true;
 
     private boolean underRenovation;
+
+    @NotNull
+    private HousekeepingStatus housekeepingStatus = HousekeepingStatus.CLEAN;
 
     private String amenities;
 }

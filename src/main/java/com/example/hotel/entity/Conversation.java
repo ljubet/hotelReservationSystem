@@ -10,7 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -51,9 +53,24 @@ public class Conversation {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    private Boolean aiCorrected = false;
+
     @PrePersist
     void onCreate() {
         this.createdAt = LocalDateTime.now();
+        normalizeFlags();
+    }
+
+    @PostLoad
+    @PreUpdate
+    void normalizeFlags() {
+        if (aiCorrected == null) {
+            aiCorrected = false;
+        }
+    }
+
+    public boolean isAiCorrected() {
+        return Boolean.TRUE.equals(aiCorrected);
     }
 
     public void replaceTurns(List<ConversationTurn> replacement) {

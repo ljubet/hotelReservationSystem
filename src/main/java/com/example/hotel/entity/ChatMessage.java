@@ -52,6 +52,10 @@ public class ChatMessage {
 
     private Boolean aiAnswered = false;
 
+    private Boolean aiCorrect;
+
+    private Boolean escalatedToAdmin = false;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -67,9 +71,16 @@ public class ChatMessage {
         if (this.aiAnswered == null) {
             this.aiAnswered = false;
         }
+        if (this.escalatedToAdmin == null) {
+            this.escalatedToAdmin = false;
+        }
     }
 
     public boolean isAiAnswered() {
         return Boolean.TRUE.equals(aiAnswered);
+    }
+
+    public boolean isEscalatedToAdmin() {
+        return Boolean.TRUE.equals(escalatedToAdmin);
     }
 }

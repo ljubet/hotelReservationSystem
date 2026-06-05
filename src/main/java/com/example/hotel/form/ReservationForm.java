@@ -1,5 +1,6 @@
 package com.example.hotel.form;
 
+import com.example.hotel.entity.PaymentOption;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -29,4 +30,7 @@ public class ReservationForm {
     @Email
     @NotBlank
     private String guestEmail;
+
+    @NotNull
+    private PaymentOption paymentOption = PaymentOption.PAY_AT_HOTEL;
 }

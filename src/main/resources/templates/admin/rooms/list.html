@@ -13,13 +13,18 @@
         <div class="card p-3">
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead><tr><th>Name</th><th>Type</th><th>Rating</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Type</th><th>Rating</th><th>Price</th><th>Housekeeping</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                     <tr th:each="room : ${rooms}">
                         <td th:text="${room.name}">Room</td>
                         <td th:text="${room.roomType}">Type</td>
                         <td th:text="${room.rating + '/5'}">4.8/5</td>
                         <td th:text="${'$' + room.pricePerNight}">$169</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${room.housekeepingStatus.name() == 'CLEAN' or room.housekeepingStatus.name() == 'INSPECTED'} ? ' text-bg-success' : (${room.housekeepingStatus.name() == 'OUT_OF_SERVICE'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                  th:text="${room.housekeepingStatus}">CLEAN</span>
+                        </td>
                         <td>
                             <span class="badge" th:classappend="${room.bookable} ? ' text-bg-success' : ' text-bg-warning'" th:text="${room.bookable ? 'Available' : 'Unavailable'}">Status</span>
                         </td>

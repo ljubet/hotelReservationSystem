@@ -34,13 +34,18 @@ public class ChatController {
 
     @PostMapping("/send")
     public ResponseEntity<Map<String, Object>> send(@Valid @RequestBody ChatSendRequest request) {
-        String reply = normalizeReply(chatbotService.getReply(request.getQuestion(), request.getSenderEmail()));
+        String reply = normalizeReply(chatbotService.getReply(
+                request.getQuestion(),
+                request.getSenderEmail(),
+                request.getSenderName()));
         ChatMessage message = new ChatMessage();
         message.setSenderName(request.getSenderName());
         message.setSenderEmail(request.getSenderEmail());
         message.setQuestion(request.getQuestion());
         message.setAnswer(reply);
-        message.setAnswered(true);
+        boolean escalated = shouldEscalate(reply);
+        message.setAnswered(!escalated);
+        message.setEscalatedToAdmin(escalated);
         message.setAiAnswered(true);
         message.setAnsweredAt(LocalDateTime.now());
         ChatMessage saved = chatMessageRepository.save(message);
@@ -48,7 +53,7 @@ public class ChatController {
                 "id", saved.getId(),
                 "question", saved.getQuestion(),
                 "answer", reply,
-                "answered", true));
+                "answered", !escalated));
     }
 
     @GetMapping("/messages")
@@ -61,6 +66,16 @@ public class ChatController {
             return ChatbotService.UNAVAILABLE_REPLY;
         }
         return reply.trim();
+    }
+
+    private boolean shouldEscalate(String reply) {
+        if (reply == null || reply.isBlank()) {
+            return true;
+        }
+        String normalized = reply.toLowerCase();
+        return ChatbotService.UNAVAILABLE_REPLY.equals(reply)
+                || normalized.contains("team will follow up")
+                || normalized.contains("staff will follow up");
     }
 
     @Getter

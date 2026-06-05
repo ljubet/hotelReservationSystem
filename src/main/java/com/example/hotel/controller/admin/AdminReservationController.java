@@ -97,11 +97,12 @@ public class AdminReservationController {
 
     @PostMapping("/admin/reservations/{id}/confirm")
     public String confirm(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Reservation not found"));
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-        reservationRepository.save(reservation);
-        redirectAttributes.addFlashAttribute("success", "Reservation confirmed.");
+        try {
+            reservationService.confirm(id);
+            redirectAttributes.addFlashAttribute("success", "Reservation confirmed.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/admin/reservations/" + id;
     }
 

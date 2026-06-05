@@ -39,6 +39,12 @@
                     <label class="form-label" for="imageUrl">Image URL</label>
                     <input id="imageUrl" th:field="*{imageUrl}" class="form-control">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="housekeepingStatus">Housekeeping status</label>
+                    <select id="housekeepingStatus" th:field="*{housekeepingStatus}" class="form-select">
+                        <option th:each="status : ${housekeepingStatuses}" th:value="${status}" th:text="${status}"></option>
+                    </select>
+                </div>
                 <div class="col-12">
                     <label class="form-label" for="description">Description</label>
                     <textarea id="description" th:field="*{description}" class="form-control" rows="4"></textarea>

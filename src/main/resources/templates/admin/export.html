@@ -5,41 +5,116 @@
 <div class="admin-shell d-md-flex">
     <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
     <main class="flex-grow-1 p-4">
-        <h1 class="h3 mb-4">JSONL Export</h1>
-        <form class="row g-2 align-items-end mb-4" method="get" th:action="@{/admin/export}">
-            <div class="col-md-4">
-                <label class="form-label" for="category">Category</label>
-                <select id="category" name="category" class="form-select">
-                    <option value="">All</option>
-                    <option th:each="category : ${categories}" th:value="${category}" th:text="${category}" th:selected="${category == selectedCategory}"></option>
-                </select>
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Conversation Export</h1>
+                <p class="text-muted mb-0">Preview and export training conversations for fine-tuning, review, or documentation.</p>
             </div>
-            <div class="col-md-4">
-                <label class="form-label" for="status">Status</label>
-                <select id="status" name="status" class="form-select">
-                    <option th:each="status : ${statuses}" th:value="${status}" th:text="${status}" th:selected="${status == selectedStatus}"></option>
-                </select>
-            </div>
-            <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-primary flex-fill" type="submit">Preview</button>
-                <a class="btn btn-success flex-fill"
-                   th:href="@{/admin/export/download(category=${selectedCategory},status=${selectedStatus})}">Download JSONL</a>
+            <a class="btn btn-success"
+               th:href="@{/admin/export/download(category=${selectedCategory},status=${selectedStatus},from=${from},to=${to},aiCorrectedOnly=${aiCorrectedOnly},adminApprovedOnly=${adminApprovedOnly},format=${selectedFormat})}">
+                Download <span th:text="${selectedFormat}">JSONL</span>
+            </a>
+        </div>
+
+        <form class="card p-4 mb-4" method="get" th:action="@{/admin/export}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label" for="from">From</label>
+                    <input id="from" name="from" type="date" class="form-control" th:value="${from}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="to">To</label>
+                    <input id="to" name="to" type="date" class="form-control" th:value="${to}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="category">Category</label>
+                    <select id="category" name="category" class="form-select">
+                        <option value="">All categories</option>
+                        <option th:each="category : ${categories}" th:value="${category}" th:text="${category}" th:selected="${category == selectedCategory}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="status">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All statuses</option>
+                        <option th:each="status : ${statuses}" th:value="${status}" th:text="${status}" th:selected="${status == selectedStatus}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="format">Format</label>
+                    <select id="format" name="format" class="form-select">
+                        <option th:each="format : ${formats}" th:value="${format}" th:text="${format}" th:selected="${format == selectedFormat}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="aiCorrectedOnly">AI corrected only</label>
+                    <select id="aiCorrectedOnly" name="aiCorrectedOnly" class="form-select">
+                        <option value="false" th:selected="${!aiCorrectedOnly}">No</option>
+                        <option value="true" th:selected="${aiCorrectedOnly}">Yes</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="adminApprovedOnly">Admin approved only</label>
+                    <select id="adminApprovedOnly" name="adminApprovedOnly" class="form-select">
+                        <option value="false" th:selected="${!adminApprovedOnly}">No</option>
+                        <option value="true" th:selected="${adminApprovedOnly}">Yes</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" type="submit">Preview Export</button>
+                </div>
             </div>
         </form>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card p-3 h-100">
+                    <span class="text-muted small">Conversations</span>
+                    <strong class="fs-3" th:text="${totalMatches}">0</strong>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 h-100">
+                    <span class="text-muted small">Categories Included</span>
+                    <strong class="fs-6" th:text="${categoriesIncludedText}">GENERAL</strong>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 h-100">
+                    <span class="text-muted small">Selected Format</span>
+                    <strong class="fs-5" th:text="${selectedFormat == 'JSONL' ? 'JSONL for fine-tuning' : (selectedFormat == 'CSV' ? 'CSV for review' : 'PDF report')}">JSONL</strong>
+                </div>
+            </div>
+        </div>
+
         <div class="card p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 mb-0">Preview</h2>
-                <span class="text-muted" th:text="${totalMatches + ' matches'}">0 matches</span>
+                <h2 class="h5 mb-0">Example Rows</h2>
+                <span class="text-muted" th:text="${#lists.size(preview) + ' shown'}">0 shown</span>
             </div>
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>First User Turn</th></tr></thead>
+                    <thead>
+                    <tr><th>Title</th><th>Category</th><th>Status</th><th>AI Corrected</th><th>User</th><th>Assistant</th></tr>
+                    </thead>
                     <tbody>
                     <tr th:each="conversation : ${preview}">
-                        <td th:text="${conversation.title}">Title</td>
-                        <td th:text="${conversation.category}">Category</td>
-                        <td th:text="${conversation.status}">Status</td>
-                        <td th:text="${#lists.isEmpty(conversation.turns) ? '' : conversation.turns[0].content}">Turn</td>
+                        <td th:text="${conversation.title()}">Title</td>
+                        <td th:text="${conversation.category()}">GENERAL</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${conversation.status() == 'APPROVED'} ? ' text-bg-success' : ' text-bg-warning'"
+                                  th:text="${conversation.status()}">APPROVED</span>
+                        </td>
+                        <td>
+                            <span class="badge" th:classappend="${conversation.aiCorrected()} ? ' text-bg-info' : ' text-bg-secondary'"
+                                  th:text="${conversation.aiCorrected()} ? 'Yes' : 'No'">No</span>
+                        </td>
+                        <td class="small" th:text="${conversation.userMessage()}">Question</td>
+                        <td class="small" th:text="${conversation.assistantMessage()}">Answer</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(preview)}">
+                        <td colspan="6" class="text-muted text-center py-4">No conversations match these filters.</td>
                     </tr>
                     </tbody>
                 </table>

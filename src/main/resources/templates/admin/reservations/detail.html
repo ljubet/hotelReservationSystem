@@ -6,7 +6,10 @@
     <aside th:replace="~{fragments/layout :: adminSidebar}"></aside>
     <main class="flex-grow-1 p-4">
         <div th:replace="~{fragments/layout :: alerts}"></div>
-        <h1 class="h3 mb-4">Reservation Detail</h1>
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center mb-4">
+            <h1 class="h3 mb-0">Reservation Detail</h1>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/reservations}">Back To Reservations</a>
+        </div>
         <div class="row g-4">
             <div class="col-lg-7">
                 <div class="card p-4">
@@ -16,7 +19,13 @@
                         <dt class="col-sm-4">Room</dt><dd class="col-sm-8" th:text="${reservation.room.name}">Room</dd>
                         <dt class="col-sm-4">Dates</dt><dd class="col-sm-8" th:text="${reservation.checkIn + ' to ' + reservation.checkOut}">Dates</dd>
                         <dt class="col-sm-4">Total</dt><dd class="col-sm-8" th:text="${'$' + reservation.totalPrice}">$338</dd>
-                        <dt class="col-sm-4">Status</dt><dd class="col-sm-8"><span class="badge text-bg-secondary" th:text="${reservation.status}">PENDING</span></dd>
+                        <dt class="col-sm-4">Payment</dt><dd class="col-sm-8">Pay at hotel</dd>
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge"
+                                  th:classappend="${reservation.status.name() == 'CONFIRMED'} ? ' text-bg-success' : (${reservation.status.name() == 'CANCELLED'} ? ' text-bg-danger' : ' text-bg-warning')"
+                                  th:text="${reservation.status}">PENDING</span>
+                        </dd>
                     </dl>
                     <div class="d-flex flex-wrap gap-2 mt-4">
                         <a class="btn btn-primary" th:href="@{/admin/reservations/{id}/edit(id=${reservation.id})}">Edit Reservation</a>

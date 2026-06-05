@@ -1,5 +1,6 @@
 package com.example.hotel.form;
 
+import com.example.hotel.entity.PaymentOption;
 import com.example.hotel.entity.ReservationStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +32,9 @@ public class AdminReservationForm {
 
     @NotNull
     private ReservationStatus status;
+
+    @NotNull
+    private PaymentOption paymentOption = PaymentOption.PAY_AT_HOTEL;
 
     private String staffNote;
 }

@@ -1,6 +1,8 @@
 package com.example.hotel.controller.admin;
 
+import com.example.hotel.entity.HousekeepingStatus;
 import com.example.hotel.entity.ReservationStatus;
+import com.example.hotel.entity.Room;
 import com.example.hotel.repository.ChatMessageRepository;
 import com.example.hotel.repository.ConversationRepository;
 import com.example.hotel.repository.ReservationRepository;
@@ -32,9 +34,26 @@ public class AdminDashboardController {
     @GetMapping("/admin/dashboard")
     public String dashboard(Model model) {
         LocalDate today = LocalDate.now();
+        long totalRooms = roomRepository.count();
+        long bookedRooms = reservationRepository.countByStatusAndCheckInLessThanEqualAndCheckOutAfter(ReservationStatus.CONFIRMED, today, today);
+        long availableRooms = roomRepository.findAll().stream()
+                .filter(Room::isBookable)
+                .filter(room -> !reservationRepository.existsActiveOverlap(room.getId(), today, today.plusDays(1)))
+                .count();
+        long dirtyRooms = roomRepository.findAll().stream()
+                .filter(room -> room.getHousekeepingStatus() == HousekeepingStatus.DIRTY)
+                .count();
+        long outOfServiceRooms = roomRepository.findAll().stream()
+                .filter(room -> room.getHousekeepingStatus() == HousekeepingStatus.OUT_OF_SERVICE)
+                .count();
+        int occupancyPercentage = totalRooms == 0 ? 0 : (int) Math.round((bookedRooms * 100.0) / totalRooms);
         model.addAttribute("totalRooms", roomRepository.count());
-        model.addAttribute("activeReservationsToday",
-                reservationRepository.countByStatusAndCheckInLessThanEqualAndCheckOutAfter(ReservationStatus.CONFIRMED, today, today));
+        model.addAttribute("activeReservationsToday", bookedRooms);
+        model.addAttribute("bookedRooms", bookedRooms);
+        model.addAttribute("availableRooms", availableRooms);
+        model.addAttribute("occupancyPercentage", occupancyPercentage);
+        model.addAttribute("dirtyRooms", dirtyRooms);
+        model.addAttribute("outOfServiceRooms", outOfServiceRooms);
         model.addAttribute("unansweredMessages", chatMessageRepository.countByAnsweredFalse());
         model.addAttribute("totalConversations", conversationRepository.count());
         model.addAttribute("todayReservations", reservationRepository.findTodayActivity(today));

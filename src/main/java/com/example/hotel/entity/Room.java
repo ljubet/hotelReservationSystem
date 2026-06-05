@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -67,11 +68,15 @@ public class Room {
     @Column(nullable = false)
     private boolean underRenovation = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column
+    private HousekeepingStatus housekeepingStatus = HousekeepingStatus.CLEAN;
+
     @Column(length = 1000)
     private String amenities;
 
     public boolean isBookable() {
-        return available && !underRenovation;
+        return available && !underRenovation && housekeepingStatus != HousekeepingStatus.OUT_OF_SERVICE;
     }
 
     public void setUnderRenovation(boolean underRenovation) {
@@ -89,6 +94,19 @@ public class Room {
         }
         if (rating == null) {
             rating = new BigDecimal("4.7");
+        }
+        if (housekeepingStatus == null) {
+            housekeepingStatus = HousekeepingStatus.CLEAN;
+        }
+        if (housekeepingStatus == HousekeepingStatus.OUT_OF_SERVICE) {
+            available = false;
+        }
+    }
+
+    @PostLoad
+    void normalizeHousekeepingStatus() {
+        if (housekeepingStatus == null) {
+            housekeepingStatus = HousekeepingStatus.CLEAN;
         }
     }
 }

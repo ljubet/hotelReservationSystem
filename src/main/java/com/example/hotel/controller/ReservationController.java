@@ -130,6 +130,20 @@ public class ReservationController {
         }
     }
 
+    @PostMapping("/reservations/{id}/cancel")
+    public String cancel(@PathVariable Long id,
+                         Authentication authentication,
+                         RedirectAttributes redirectAttributes) {
+        findOwnedReservation(id, authentication);
+        try {
+            reservationService.cancelGuestReservation(id);
+            redirectAttributes.addFlashAttribute("success", "Reservation cancelled.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/reservations/my";
+    }
+
     private Reservation findOwnedReservation(Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
             throw new AccessDeniedException("You must be signed in to edit a reservation.");

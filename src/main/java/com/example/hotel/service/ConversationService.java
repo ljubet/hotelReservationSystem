@@ -46,10 +46,16 @@ public class ConversationService {
 
     @Transactional
     public Conversation createFromChat(ChatMessage message) {
+        return createFromChat(message, message.isAiAnswered());
+    }
+
+    @Transactional
+    public Conversation createFromChat(ChatMessage message, boolean aiCorrected) {
         Conversation conversation = new Conversation();
         conversation.setTitle("Chat with " + message.getSenderName());
         conversation.setCategory(ConversationCategory.GENERAL);
         conversation.setStatus(ConversationStatus.DRAFT);
+        conversation.setAiCorrected(aiCorrected);
 
         ConversationTurn userTurn = new ConversationTurn();
         userTurn.setRole(MessageRole.USER);

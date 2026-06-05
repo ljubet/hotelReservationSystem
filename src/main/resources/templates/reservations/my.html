@@ -71,6 +71,10 @@
                                 <div class="small text-muted">Total</div>
                                 <strong th:text="${'$' + reservation.totalPrice}">$833</strong>
                             </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Payment</div>
+                                <strong>Pay at hotel</strong>
+                            </div>
                         </div>
 
                         <div class="mt-auto d-flex flex-column flex-md-row justify-content-between gap-2 align-items-md-center border-top pt-3">
@@ -80,6 +84,12 @@
                                 <a class="btn btn-gold btn-sm"
                                    th:if="${reservation.status.name() == 'PENDING'}"
                                    th:href="@{/reservations/{id}/edit(id=${reservation.id})}">Edit Reservation</a>
+                                <form th:if="${reservation.status.name() == 'PENDING'}"
+                                      th:action="@{/reservations/{id}/cancel(id=${reservation.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Cancel this pending reservation?');">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">Cancel Reservation</button>
+                                </form>
                             </div>
                         </div>
                     </div>

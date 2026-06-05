@@ -12,10 +12,23 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h2 class="h5 mb-0" th:text="${message.senderName}">Guest</h2>
                         <span th:if="${message.aiAnswered == true}" class="badge text-bg-info">AI Answer</span>
+                        <span th:if="${message.escalatedToAdmin == true}" class="badge text-bg-danger">Escalated</span>
+                        <span th:if="${message.aiCorrect == true}" class="badge text-bg-success">Marked Correct</span>
+                        <span th:if="${message.aiCorrect == false}" class="badge text-bg-danger">Marked Incorrect</span>
                         <span th:if="${!message.answered}" class="badge text-bg-warning">Needs Reply</span>
                     </div>
                     <p class="text-muted" th:text="${message.senderEmail}">email</p>
                     <p th:text="${message.question}">Question</p>
+                    <div th:if="${message.aiAnswered == true}" class="d-flex flex-wrap gap-2 mt-3">
+                        <form th:action="@{/admin/chat/{id}/ai-feedback(id=${message.id})}" method="post">
+                            <input type="hidden" name="correct" value="true">
+                            <button class="btn btn-sm btn-outline-success" type="submit">Mark AI Correct</button>
+                        </form>
+                        <form th:action="@{/admin/chat/{id}/ai-feedback(id=${message.id})}" method="post">
+                            <input type="hidden" name="correct" value="false">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Mark AI Incorrect</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-7">

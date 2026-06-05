@@ -10,8 +10,12 @@
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Rooms</span><strong class="fs-3" th:text="${totalRooms}">0</strong></div></div>
             <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Active Today</span><strong class="fs-3" th:text="${activeReservationsToday}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Available Rooms</span><strong class="fs-3" th:text="${availableRooms}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Occupancy</span><strong class="fs-3" th:text="${occupancyPercentage + '%'}">0%</strong></div></div>
             <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Unanswered Chat</span><strong class="fs-3" th:text="${unansweredMessages}">0</strong></div></div>
             <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Conversations</span><strong class="fs-3" th:text="${totalConversations}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Dirty Rooms</span><strong class="fs-3" th:text="${dirtyRooms}">0</strong></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card p-3"><span class="text-muted">Out Of Service</span><strong class="fs-3" th:text="${outOfServiceRooms}">0</strong></div></div>
         </div>
         <div class="row g-4">
             <div class="col-xl-7">

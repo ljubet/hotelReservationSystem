@@ -19,6 +19,9 @@
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <strong th:text="${message.senderName}">Guest</strong>
                             <span th:if="${message.aiAnswered == true}" class="badge text-bg-info">AI</span>
+                            <span th:if="${message.escalatedToAdmin == true}" class="badge text-bg-danger">Escalated</span>
+                            <span th:if="${message.aiCorrect == true}" class="badge text-bg-success">AI Correct</span>
+                            <span th:if="${message.aiCorrect == false}" class="badge text-bg-danger">AI Incorrect</span>
                             <span th:if="${!message.answered}" class="badge text-bg-warning">Needs Reply</span>
                             <span th:if="${message.answered && message.aiAnswered != true}" class="badge text-bg-success">Staff Answered</span>
                         </div>

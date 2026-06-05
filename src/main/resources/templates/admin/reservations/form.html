@@ -15,6 +15,7 @@
         </div>
 
         <form class="card p-4" th:action="@{/admin/reservations/{id}/edit(id=${reservation.id})}" th:object="${reservationForm}" method="post">
+            <input type="hidden" name="paymentOption" value="PAY_AT_HOTEL">
             <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
             <div class="row g-3">
                 <div class="col-lg-6">
@@ -33,12 +34,12 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="checkIn">Check-in</label>
-                    <input id="checkIn" type="date" th:field="*{checkIn}" class="form-control">
+                    <input id="checkIn" type="date" name="checkIn" th:value="${reservationForm.checkIn}" class="form-control">
                     <div class="text-danger small" th:errors="*{checkIn}"></div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="checkOut">Check-out</label>
-                    <input id="checkOut" type="date" th:field="*{checkOut}" class="form-control">
+                    <input id="checkOut" type="date" name="checkOut" th:value="${reservationForm.checkOut}" class="form-control">
                     <div class="text-danger small" th:errors="*{checkOut}"></div>
                 </div>
                 <div class="col-md-6">

@@ -46,16 +46,30 @@ public class AdminChatController {
                         RedirectAttributes redirectAttributes) {
         ChatMessage message = chatMessageRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
+        boolean wasAiAnswered = message.isAiAnswered();
         message.setAnswer(answer);
         message.setAnswered(true);
         message.setAiAnswered(false);
+        message.setEscalatedToAdmin(false);
         message.setAnsweredAt(LocalDateTime.now());
         if (saveConversation && !message.isSavedAsConversation()) {
-            conversationService.createFromChat(message);
+            conversationService.createFromChat(message, wasAiAnswered);
             message.setSavedAsConversation(true);
         }
         chatMessageRepository.save(message);
         redirectAttributes.addFlashAttribute("success", "Reply saved.");
         return "redirect:/admin/chat";
+    }
+
+    @PostMapping("/admin/chat/{id}/ai-feedback")
+    public String aiFeedback(@PathVariable Long id,
+                             @RequestParam boolean correct,
+                             RedirectAttributes redirectAttributes) {
+        ChatMessage message = chatMessageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Message not found"));
+        message.setAiCorrect(correct);
+        chatMessageRepository.save(message);
+        redirectAttributes.addFlashAttribute("success", correct ? "AI answer marked correct." : "AI answer marked incorrect.");
+        return "redirect:/admin/chat/" + id;
     }
 }

@@ -28,7 +28,7 @@
         }
         .skip-link:focus { top: 1rem; }
         :focus-visible { outline: 3px solid rgba(184, 137, 53, .55); outline-offset: 3px; }
-        .navbar-brand { font-weight: 700; letter-spacing: .02em; }
+        .navbar-brand { font-weight: 700; letter-spacing: 0; }
         .btn-gold { background: var(--hotel-gold); border-color: var(--hotel-gold); color: #fff; }
         .btn-gold:hover { background: #9f742b; border-color: #9f742b; color: #fff; }
         .hero {
@@ -179,6 +179,71 @@
             box-shadow: 0 12px 28px rgba(62, 49, 30, .08);
         }
         .reservation-thumb { height: 100%; min-height: 190px; object-fit: cover; }
+        .availability-panel {
+            border: 1px solid #eadfcd; border-radius: 8px; background: #fff;
+            box-shadow: 0 12px 28px rgba(62, 49, 30, .06); padding: 1.25rem;
+        }
+        .availability-legend { display: flex; flex-wrap: wrap; gap: .9rem; color: #6c757d; font-size: .9rem; }
+        .availability-dot { width: .65rem; height: .65rem; display: inline-block; border-radius: 50%; margin-right: .35rem; }
+        .availability-dot.is-open { background: #198754; }
+        .availability-dot.is-booked { background: #c04a3a; }
+        .availability-calendar {
+            display: grid; grid-template-columns: repeat(7, minmax(72px, 1fr)); gap: .6rem;
+        }
+        .availability-calendar.is-compact {
+            grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+        }
+        .availability-calendar.is-compact .availability-day {
+            min-height: 82px; padding: .55rem;
+        }
+        .availability-calendar.is-compact .availability-day strong { font-size: 1.2rem; }
+        .availability-day {
+            min-height: 104px; border: 1px solid #eadfcd; border-radius: 8px; background: #fff;
+            padding: .7rem; display: flex; flex-direction: column; gap: .2rem;
+        }
+        .availability-day strong { font-size: 1.45rem; line-height: 1; }
+        .availability-weekday, .availability-month { color: #6c757d; font-size: .78rem; text-transform: uppercase; letter-spacing: 0; }
+        .availability-status { margin-top: auto; font-size: .82rem; font-weight: 700; }
+        .availability-day.is-open { border-color: rgba(25, 135, 84, .32); background: linear-gradient(180deg, #fff 0%, #f3fbf7 100%); }
+        .availability-day.is-open .availability-status { color: #198754; }
+        .availability-day.is-booked { border-color: rgba(192, 74, 58, .28); background: linear-gradient(180deg, #fff 0%, #fff5f3 100%); }
+        .availability-day.is-booked .availability-status { color: #c04a3a; }
+        .review-panel {
+            border: 1px solid #eadfcd; border-radius: 8px; background: linear-gradient(135deg, #fff 0%, #fffaf1 100%);
+            padding: 1.25rem;
+        }
+        .review-card {
+            border: 1px solid #eadfcd; border-radius: 8px; background: #fff; padding: 1rem;
+            box-shadow: 0 10px 24px rgba(62, 49, 30, .06);
+        }
+        .review-avatar {
+            width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+            background: #1f1d1a; color: #fff; font-weight: 700; flex: 0 0 auto;
+        }
+        .review-stars span { color: #d7cab6; font-size: .95rem; }
+        .review-stars span.is-filled { color: var(--hotel-gold); }
+        .profile-favorite-link {
+            border: 1px solid #eadfcd; border-radius: 8px; padding: .75rem .9rem; color: var(--hotel-ink);
+            display: flex; justify-content: space-between; gap: 1rem; text-decoration: none; background: #fff;
+        }
+        .profile-favorite-link:hover { border-color: var(--hotel-gold); box-shadow: 0 10px 24px rgba(62, 49, 30, .08); }
+        .admin-calendar-grid {
+            display: grid; grid-template-columns: repeat(7, minmax(92px, 1fr)); gap: .65rem;
+        }
+        .admin-calendar-day {
+            width: 100%; min-height: 96px; border: 1px solid #d9dee6; border-radius: 8px; background: #fff;
+            text-align: left; padding: .7rem; display: flex; flex-direction: column; gap: .25rem;
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        }
+        .admin-calendar-day:hover,
+        .admin-calendar-day:focus-visible {
+            transform: translateY(-2px); border-color: #8aa5d8; box-shadow: 0 12px 26px rgba(34, 48, 78, .12);
+        }
+        .admin-calendar-day.is-empty { background: #f8f9fb; color: #6c757d; }
+        .admin-calendar-day.has-stays { border-color: rgba(13, 110, 253, .34); background: #f8fbff; }
+        .admin-calendar-date { font-size: 1.35rem; line-height: 1; font-weight: 700; }
+        .admin-calendar-month { color: #6c757d; font-size: .75rem; text-transform: uppercase; letter-spacing: 0; }
+        .admin-calendar-weekday { color: #6c757d; font-size: .8rem; }
         .reveal-on-scroll {
             opacity: 0; transform: translateY(28px);
             transition: opacity .7s ease, transform .7s ease;
@@ -199,9 +264,15 @@
             .carousel-edge-control { position: static; margin-bottom: 1rem; }
             .carousel-mobile-controls { display: flex !important; }
             .carousel-desktop-control { display: none !important; }
+            .availability-calendar,
+            .admin-calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (min-width: 768px) {
             .carousel-mobile-controls { display: none !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .availability-calendar,
+            .admin-calendar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
@@ -243,6 +314,7 @@
                 <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/rooms}">Rooms</a></li>
                 <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/reservations/my}">My Reservations</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/profile}">Profile</a></li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link" th:href="@{/admin/dashboard}">Admin</a></li>
             </ul>
             <div class="d-flex gap-2 align-items-center">
@@ -382,6 +454,7 @@
         <a th:href="@{/admin/dashboard}">Dashboard</a>
         <a th:href="@{/admin/rooms}">Rooms</a>
         <a th:href="@{/admin/reservations}">Reservations</a>
+        <a th:href="@{/admin/calendar}">Calendar</a>
         <a th:href="@{/admin/chat}">Chat Inbox</a>
         <a th:href="@{/admin/conversations}">Conversations</a>
         <a th:href="@{/admin/export}">Export</a>

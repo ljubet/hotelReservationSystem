@@ -8,7 +8,12 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 mb-1" th:text="${conversation.title}">Conversation</h1>
-                <div class="text-muted" th:text="${conversation.category + ' / ' + conversation.status}">Meta</div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted" th:text="${conversation.category}">GENERAL</span>
+                    <span class="badge"
+                          th:classappend="${conversation.status.name() == 'APPROVED'} ? ' text-bg-success' : ' text-bg-warning'"
+                          th:text="${conversation.status}">DRAFT</span>
+                </div>
             </div>
             <a class="btn btn-primary" th:href="@{/admin/conversations/{id}/edit(id=${conversation.id})}">Edit</a>
         </div>
