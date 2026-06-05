@@ -67,15 +67,42 @@ public class ChatActionService {
     }
 
     @Transactional
+    public Optional<String> handlePlannedAction(String question,
+                                                String senderName,
+                                                String senderEmail,
+                                                ChatActionPlan plan) {
+        if (question == null || question.isBlank() || senderEmail == null || senderEmail.isBlank()) {
+            return Optional.empty();
+        }
+        String key = senderEmail.trim().toLowerCase(Locale.ROOT);
+        ChatActionState state = states.get(key);
+        if (state != null) {
+            return Optional.of(continueAction(key, state, question, senderName, senderEmail));
+        }
+
+        Action action = actionFromPlan(plan);
+        if (action == Action.NONE) {
+            return Optional.empty();
+        }
+        if (action == Action.ROOM_COUNT) {
+            return Optional.of(roomCountReply());
+        }
+
+        ChatActionState newState = new ChatActionState(action);
+        newState.guestName = senderName;
+        newState.guestEmail = senderEmail;
+        absorbPlan(newState, plan);
+        absorbDetails(newState, question);
+        return Optional.of(advance(key, newState));
+    }
+
+    @Transactional
     public Optional<String> handle(String question, String senderName, String senderEmail) {
         if (question == null || question.isBlank() || senderEmail == null || senderEmail.isBlank()) {
             return Optional.empty();
         }
         if (asksForRoomCount(question)) {
-            long totalRooms = roomRepository.count();
-            long bookableRooms = roomRepository.findAll().stream().filter(Room::isBookable).count();
-            return Optional.of("Aurora Hotel currently has " + totalRooms + " rooms in the system, with "
-                    + bookableRooms + " currently bookable.");
+            return Optional.of(roomCountReply());
         }
         String key = senderEmail.trim().toLowerCase(Locale.ROOT);
         ChatActionState state = states.get(key);
@@ -104,6 +131,11 @@ public class ChatActionService {
         state.guestEmail = blankToDefault(state.guestEmail, senderEmail);
 
         if (state.awaitingConfirmation) {
+            if (!isPositiveConfirmation(question) && !extractDates(question).isEmpty()) {
+                state.awaitingConfirmation = false;
+                absorbDetails(state, question);
+                return advance(key, state);
+            }
             if (isPositiveConfirmation(question)) {
                 states.remove(key);
                 return performConfirmedAction(state);
@@ -135,6 +167,9 @@ public class ChatActionService {
                 || containsAny(text, "change reservation", "edit reservation", "modify reservation", "change booking", "edit booking")) {
             return Action.CHANGE_RESERVATION;
         }
+        if (mentionsReservation && containsAny(text, "show", "list", "see", "view", "my", "status")) {
+            return Action.SHOW_RESERVATIONS;
+        }
         if (containsAny(text, "book", "reserve", "make a reservation", "make reservation", "create reservation")) {
             return Action.CREATE_RESERVATION;
         }
@@ -147,6 +182,17 @@ public class ChatActionService {
         return Action.NONE;
     }
 
+    private Action actionFromPlan(ChatActionPlan plan) {
+        if (plan == null || plan.action() == null || plan.action().isBlank()) {
+            return Action.NONE;
+        }
+        try {
+            return Action.valueOf(plan.action().trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return Action.NONE;
+        }
+    }
+
     private String advance(String key, ChatActionState state) {
         return switch (state.action) {
             case CREATE_RESERVATION -> advanceCreateReservation(key, state);
@@ -155,6 +201,8 @@ public class ChatActionService {
             case CHECK_AVAILABILITY -> advanceAvailability(key, state);
             case PRICE_QUOTE -> advancePriceQuote(key, state);
             case RECOMMEND_ROOM -> advanceRecommendation(key, state);
+            case SHOW_RESERVATIONS -> advanceShowReservations(key, state);
+            case ROOM_COUNT -> roomCountReply();
             case NONE -> "";
         };
     }
@@ -365,6 +413,21 @@ public class ChatActionService {
         return builder.toString().trim();
     }
 
+    private String advanceShowReservations(String key, ChatActionState state) {
+        states.remove(key);
+        List<Reservation> reservations = reservationsForGuest(state.guestEmail).stream()
+                .filter(reservation -> state.roomId == null || reservation.getRoom().getId().equals(state.roomId))
+                .filter(reservation -> state.roomType == null || reservation.getRoom().getRoomType() == state.roomType)
+                .filter(reservation -> state.checkIn == null || state.checkOut == null
+                        || (reservation.getCheckIn().isBefore(state.checkOut)
+                        && reservation.getCheckOut().isAfter(state.checkIn)))
+                .toList();
+        if (reservations.isEmpty()) {
+            return "I could not find matching reservations for your email.";
+        }
+        return "Here are your matching reservations:\n" + formatReservations(reservations);
+    }
+
     private String performConfirmedAction(ChatActionState state) {
         return switch (state.action) {
             case CREATE_RESERVATION -> createReservation(state);
@@ -424,7 +487,7 @@ public class ChatActionService {
     }
 
     private void absorbDetails(ChatActionState state, String question) {
-        List<LocalDate> dates = extractDates(question);
+        List<LocalDate> dates = extractDates(question, state.action != Action.SHOW_RESERVATIONS);
         if (dates.size() >= 2) {
             state.checkIn = dates.get(0);
             state.checkOut = dates.get(1);
@@ -449,6 +512,56 @@ public class ChatActionService {
         }
         extractBudget(question).ifPresent(value -> state.maxBudget = value);
         extractCapacity(question).ifPresent(value -> state.minCapacity = value);
+    }
+
+    private void absorbPlan(ChatActionState state, ChatActionPlan plan) {
+        if (plan == null) {
+            return;
+        }
+        if (plan.reservationId() != null && state.action != Action.CREATE_RESERVATION) {
+            state.reservationId = plan.reservationId();
+        }
+        if (plan.roomName() != null && !plan.roomName().isBlank()) {
+            findRoomByName(plan.roomName()).ifPresent(room -> {
+                state.roomId = room.getId();
+                state.roomType = room.getRoomType();
+            });
+        }
+        if (plan.roomType() != null && state.roomId == null) {
+            try {
+                state.roomType = RoomType.valueOf(plan.roomType().trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                // Ignore invalid model output; the next prompt will ask the guest for a room type.
+            }
+        }
+        applyPlannedDates(state, plan);
+        if (plan.maxBudget() != null) {
+            state.maxBudget = plan.maxBudget();
+        }
+        if (plan.minCapacity() != null) {
+            state.minCapacity = plan.minCapacity();
+        }
+    }
+
+    private void applyPlannedDates(ChatActionState state, ChatActionPlan plan) {
+        List<LocalDate> combinedDates = new ArrayList<>();
+        if (plan.checkIn() != null) {
+            combinedDates.addAll(extractDates(plan.checkIn(), state.action != Action.SHOW_RESERVATIONS));
+        }
+        if (plan.checkOut() != null) {
+            combinedDates.addAll(extractDates(plan.checkOut(), state.action != Action.SHOW_RESERVATIONS));
+        }
+        List<LocalDate> uniqueDates = combinedDates.stream().distinct().limit(2).toList();
+        if (uniqueDates.size() >= 2) {
+            state.checkIn = uniqueDates.get(0);
+            state.checkOut = uniqueDates.get(1);
+        } else if (uniqueDates.size() == 1) {
+            if (state.action == Action.CHANGE_RESERVATION && plan.checkOut() != null && plan.checkIn() == null) {
+                state.checkOut = uniqueDates.get(0);
+            } else {
+                state.checkIn = uniqueDates.get(0);
+            }
+        }
     }
 
     private Optional<Room> resolveAvailableRoom(ChatActionState state, Long excludingReservationId) {
@@ -530,10 +643,14 @@ public class ChatActionService {
     }
 
     private List<LocalDate> extractDates(String text) {
+        return extractDates(text, true);
+    }
+
+    private List<LocalDate> extractDates(String text, boolean rollForwardInferredYear) {
         List<DateMatch> matches = new ArrayList<>();
         addDateMatches(matches, ISO_DATE, text, this::parseIsoDate);
-        addDateMatches(matches, NUMERIC_DATE, text, this::parseNumericDate);
-        addDateMatches(matches, MONTH_DATE, text, this::parseMonthDate);
+        addDateMatches(matches, NUMERIC_DATE, text, value -> parseNumericDate(value, rollForwardInferredYear));
+        addDateMatches(matches, MONTH_DATE, text, value -> parseMonthDate(value, rollForwardInferredYear));
         Set<LocalDate> orderedDates = new LinkedHashSet<>();
         matches.stream()
                 .sorted(Comparator.comparingInt(DateMatch::start))
@@ -545,8 +662,11 @@ public class ChatActionService {
     private void addDateMatches(List<DateMatch> matches, Pattern pattern, String text, DateParser parser) {
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
+            if (matches.stream().anyMatch(existing -> existing.contains(matcher.start(), matcher.end()))) {
+                continue;
+            }
             parser.parse(matcher.group())
-                    .map(date -> new DateMatch(matcher.start(), date))
+                    .map(date -> new DateMatch(matcher.start(), matcher.end(), date))
                     .ifPresent(matches::add);
         }
     }
@@ -560,6 +680,10 @@ public class ChatActionService {
     }
 
     private Optional<LocalDate> parseMonthDate(String value) {
+        return parseMonthDate(value, true);
+    }
+
+    private Optional<LocalDate> parseMonthDate(String value, boolean rollForwardInferredYear) {
         String normalized = value.replace(",", "").replaceAll("\\s+", " ").trim();
         boolean hasYear = normalized.matches(".*\\b\\d{4}\\b.*");
         if (!hasYear) {
@@ -569,7 +693,7 @@ public class ChatActionService {
             try {
                 TemporalAccessor parsed = formatter.parse(normalized);
                 LocalDate date = LocalDate.of(parsed.get(ChronoField.YEAR), parsed.get(ChronoField.MONTH_OF_YEAR), parsed.get(ChronoField.DAY_OF_MONTH));
-                return Optional.of(rollForwardIfPast(date, !hasYear));
+                return Optional.of(rollForwardIfPast(date, !hasYear && rollForwardInferredYear));
             } catch (DateTimeParseException ignored) {
                 // Try the next month-name format.
             }
@@ -578,6 +702,10 @@ public class ChatActionService {
     }
 
     private Optional<LocalDate> parseNumericDate(String value) {
+        return parseNumericDate(value, true);
+    }
+
+    private Optional<LocalDate> parseNumericDate(String value, boolean rollForwardInferredYear) {
         String[] parts = value.replace('-', '/').split("/");
         if (parts.length < 2 || parts.length > 3) {
             return Optional.empty();
@@ -599,7 +727,7 @@ public class ChatActionService {
                 month = second;
             }
             LocalDate date = LocalDate.of(year, month, day);
-            return Optional.of(rollForwardIfPast(date, parts.length == 2));
+            return Optional.of(rollForwardIfPast(date, parts.length == 2 && rollForwardInferredYear));
         } catch (RuntimeException ex) {
             return Optional.empty();
         }
@@ -715,6 +843,13 @@ public class ChatActionService {
         return containsAny(text, "how many rooms", "number of rooms", "total rooms", "rooms does the hotel have");
     }
 
+    private String roomCountReply() {
+        long totalRooms = roomRepository.count();
+        long bookableRooms = roomRepository.findAll().stream().filter(Room::isBookable).count();
+        return "Aurora Hotel currently has " + totalRooms + " rooms in the system, with "
+                + bookableRooms + " currently bookable.";
+    }
+
     private boolean mentionsCheckIn(String question) {
         String text = normalize(question);
         return containsAny(text, "check-in", "check in", "arrival", "arrive");
@@ -735,9 +870,10 @@ public class ChatActionService {
         CANCEL_RESERVATION,
         CHANGE_RESERVATION,
         CHECK_AVAILABILITY,
-        PRICE_QUOTE
-        ,
-        RECOMMEND_ROOM
+        PRICE_QUOTE,
+        RECOMMEND_ROOM,
+        SHOW_RESERVATIONS,
+        ROOM_COUNT
     }
 
     private static class ChatActionState {
@@ -758,7 +894,11 @@ public class ChatActionService {
         }
     }
 
-    private record DateMatch(int start, LocalDate date) {
+    private record DateMatch(int start, int end, LocalDate date) {
+
+        private boolean contains(int otherStart, int otherEnd) {
+            return otherStart >= start && otherEnd <= end;
+        }
     }
 
     @FunctionalInterface

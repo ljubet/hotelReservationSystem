@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 
 @Service
 public class ChatbotService {
@@ -18,23 +19,29 @@ public class ChatbotService {
 
     private final ChatClient chatClient;
     private final HotelMcpTools hotelMcpTools;
+    private final ChatActionPlanner chatActionPlanner;
     private final ChatActionService chatActionService;
     private final String systemPrompt;
     private final AtomicBoolean toolCallingDisabled = new AtomicBoolean(false);
 
     public ChatbotService(ChatClient.Builder chatClientBuilder,
                           HotelMcpTools hotelMcpTools,
+                          ChatActionPlanner chatActionPlanner,
                           ChatActionService chatActionService,
                           @Value("${hotel.chatbot.system-prompt}") String systemPrompt) {
         this.chatClient = chatClientBuilder.build();
         this.hotelMcpTools = hotelMcpTools;
+        this.chatActionPlanner = chatActionPlanner;
         this.chatActionService = chatActionService;
         this.systemPrompt = systemPrompt;
     }
 
     public String getReply(String question, String guestEmail, String guestName) {
         String email = blankToUnknown(guestEmail);
-        String actionReply = chatActionService.handle(question, guestName, guestEmail).orElse(null);
+        Optional<ChatActionPlan> plannedAction = chatActionPlanner.plan(question, guestEmail);
+        String actionReply = plannedAction.isPresent()
+                ? chatActionService.handlePlannedAction(question, guestName, guestEmail, plannedAction.get()).orElse(null)
+                : chatActionService.handle(question, guestName, guestEmail).orElse(null);
         if (actionReply != null) {
             return actionReply;
         }
